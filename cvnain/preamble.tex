@@ -1,0 +1,59 @@
+\usepackage{marvosym} % Allows the use of symbols
+\usepackage{parskip} % Spacing adjustments
+\usepackage{tfrupee}
+
+% ---------- Icons ----------
+\usepackage{fontawesome5}
+
+\newcommand{\secicon}[1]{#1\hspace{0.6em}}
+
+% Main font
+\usepackage{fontspec}
+\setmainfont{Raleway}[
+  Path           = ./fonts/,
+  Extension      = .ttf,
+  UprightFont    = *-Regular,
+  BoldFont       = *-Bold,
+  ItalicFont     = *-Italic,
+  BoldItalicFont = *-BoldItalic
+]
+
+% Chinese font
+\usepackage{xeCJK}
+\setCJKmainfont[Path = ./fonts/]{kaiti.ttf}
+
+% Compact spacing
+\usepackage{setspace}
+\setstretch{0.95}
+
+% Two-column layout for header
+\usepackage{multicol}
+
+% Better section formatting
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\scshape}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{8pt}{4pt}
+
+% Compact lists
+\usepackage{enumitem}
+\setlist{noitemsep, topsep=4pt, parsep=0pt, partopsep=0pt}
+
+% Tables without vertical lines
+\usepackage{booktabs}
+
+% Remove fancyhdr footer (simpler layout)
+\usepackage{fancyhdr}
+\pagestyle{empty}
+
+% Links
+\usepackage{hyperref}
+\usepackage{xcolor}
+\definecolor{linkcolour}{rgb}{0,0.2,0.6}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkcolour,
+    urlcolor=linkcolour,
+    citecolor=linkcolour
+}

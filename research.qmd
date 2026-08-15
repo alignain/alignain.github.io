@@ -1,0 +1,33 @@
+---
+title: "Research"
+---
+
+```{r setup, include=FALSE}
+source("R/helpers.R")
+```
+
+```{r scholar, results="asis"}
+print_scholar_stats()
+```
+
+<!-- *Publications per year:* -->
+
+<!-- ```{r pubs-chart} -->
+<!-- pubs_chart() -->
+<!-- ``` -->
+
+```{r publications, results="asis"}
+print_publications()
+```
+
+## Research Projects
+
+```{r projects, results="asis"}
+print_projects()
+```
+
+## Conference Presentations
+
+```{r presentations, results="asis"}
+print_presentations()
+```

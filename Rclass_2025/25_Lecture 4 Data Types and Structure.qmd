@@ -1,0 +1,931 @@
+---
+title: Data Types & Structures in `R`
+author: Md Zulquar Nain
+institute: AMU
+date: today
+date-format: long
+format: 
+  revealjs:
+    theme: night
+   # logo: imgages/logo.png 
+    incremental: true
+    scrollable: true
+    slide-number: true
+    show-slide-number: all
+    preview-links: auto
+  pdf: default
+editor: visual
+from: markdown+emoji
+---
+
+# Data Types
+
+## Objects {.scrollable}
+
+-   Most statistical software (e.g., SPSS, Stata) operates on datasets, which consist of rows of observations and columns of variables
+-   R is an `object-oriented` programming language (like Python,JavaScript).
+-   So, what is an `object`?
+-   In computer language - complex definition
+-   Anything to which you assigned a value
+
+```{r}
+a <- 5
+d <- "You are SMART!"
+```
+
+. . .
+
+::: {.callout-important style="color: red"}
+**Objects are like boxes in which we can put things: data, functions, and even other objects.** Ben Skinner
+:::
+
+## Data Objects {background="#4682B4"}
+
+:::: r-fit-text
+::: centre
+-   Data usually obtained from external sources
+-   Collected by researchers using survey
+-   In `R` import those data files into `R Objects`
+:::
+::::
+
+## Data Types {.scrollable}
+
+::: centre
+-   Use function `typeof()` to check the type of data
+-   the function `typeof()` returns the **Data type** or **data structure**
+-   Data Types are
+    -   **Double**
+    -   **Integer**
+    -   **Complex**
+    -   **Logical**
+    -   **Character**
+    -   **Factor**
+    -   **Date and time**
+:::
+
+## Data Types
+
+::: centre
+-   **Double**
+    -   `Doubles` are numbers like 2.0, 2.2, 2.999
+    -   May or may not include decimals
+    -   Mostly used to represent continuous variables like wage, height, age
+    -   In `R` by default all numbers are `Double`
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+x <- 10.5
+is.double(x)
+
+```
+:::
+
+## Data Types
+
+::: centre
+-   **Integer**
+    -   `Integers` are natural numbers
+    -   Mostly used for counting variables
+    -   However, in `R` by default treated as `Double`
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+x <- 6
+typeof(x)
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+x <- as.integer(9)
+typeof(x)
+
+```
+:::
+
+## Data Types
+
+::: centre
+-   **Complex**
+    -   `Complex` like $x+yi$
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+x <- -1
+typeof(x)
+sqrt(x)
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+
+# Complex
+y <--1+(0+0i)
+sqrt(y)
+
+```
+:::
+
+## Data Types
+
+::: centre
+-   **Logical**
+    -   `Logical`: a variable of logical type data has values like `TRUE` or `FALSE`
+    -   Usually used to represent conditional statements
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+x <- 20
+y <- 15
+a <- x > y
+a
+typeof(a)
+```
+:::
+
+## Data Types
+
+::: centre
+-   **Character**
+    -   `Characters` represents a `string values` in `R`
+    -   Usually a string or collection of characters are kept in`double quotes`
+    -   Anything in a double quote is considered a string in `R`
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+x <- "You are smart"
+print(x)
+y <- "5"
+typeof(y)
+```
+:::
+
+## Data Types {.scrollable}
+
+::: centre
+-   **Factor**
+    -   `Factor` represents categorical data
+    -   For example gender(Male, Female), employed and unemployed
+    -   Also handy in case of panel and longitudinal data
+    -   Factor objects can be created from character or numeric objects
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+# Created from Characters
+cat <- c("A","B","C")
+# Use functions to convert into factor type
+cat=as.factor(cat)
+cat 
+levels(cat)
+```
+:::
+
+## Data Types {.scrollable}
+
+::: centre
+-   **Date and Time**
+    -   We need quite often especially when dealing with time series models
+    -   Function `as.Date` is used to create `Date and Time` objects\
+    -   See `help(as.Date)`
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+today <-"25-03-2023" 
+today <- as.Date(today,"%d-%m-%Y")
+today
+today1 <- Sys.Date()
+today1
+today2 <- format(today1, "%d %B %Y")
+today2
+
+```
+:::
+
+## Missing Values in `R`
+
+::: centre
+-   In `R` missing data is represented by `NA` meaning **Not Available**
+-   Another symbol appears in `R` is `NaN` meaning **Not a Number**
+-   `NULL` in `R` represent an object with ZERO length
+-   `-Inf` and `Inf` represents negative and positive infinity
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| code-line-numbers: true
+#| output-location: fragment
+# Create a vector using function `c()`
+ownd <- c("10","30","missing")
+# converting to double
+ownd <- as.double(ownd)
+  # check for the missing value
+is.na(ownd)
+
+```
+:::
+
+# Data Structure in `R`
+
+## Data Structure in R {.scrollable}
+
+-   For analysis,data should be structured in well-defined manner.
+-   In `R` there are certain structures followed by imported data.
+    -   Vector
+    -   Matrices
+    -   Lists
+    -   Array
+    -   Data Frame
+
+## Vectors
+
+:::: r-fit-text
+::: centre
+-   scalars Vs Vectors?
+-   groups of values of same data types
+-   Simplest function to define a vector `c(value1,value2,...)`
+-   All the operators and functions discussed earlier can be used for `vectors` also
+-   However, operations are performed element by element
+:::
+::::
+
+. . .
+
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# define a vector `vec` with function `c`
+vec <- c(2, 4,-4,0)
+vec
+print(vec)
+
+```
+
+## Vectors {background="#4682B4"}
+
+::: centre
+-   Other way to generate vectors
+:::
+
+. . .
+
+| Functions           | Explanations                          |
+|---------------------|---------------------------------------|
+| `numeric(n)`        | vector with `n zeros`                 |
+| `rep(x,n)`          | Vector with `n` equal elements of `x` |
+| `seq(x)/seq(1:x)`   | Sequence from `1` to `x`              |
+| `seq(f,x)/seq(f:x)` | Sequence from `1` to `x`              |
+| `seq(f,x,s)`        | Sequence from `1` to `x` in steps `s` |
+
+: Special functions to create vectors
+
+## Basic Operations of a Vector {.scrollable}
+
+|  Functions  | Explanations                          |
+|:-----------:|---------------------------------------|
+| `length(v)` | Number of elements in vector `v`      |
+|  `max(v)`   | Largest Number in vector `v`          |
+|  `min(v)`   | Smallest number in vector `v`         |
+|  `sum(v)`   | Sum of the elements in vector `v`     |
+|  `prod(v)`  | Product of elements in vector `v`     |
+|  `sort(v)`  | Sorting of the elements of vector `v` |
+
+## Basic Operations of a Vector {.scrollable}
+
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# define a vector `vec` with function `c`
+vec <- c(2, 4,-4,0,1,3)
+vec
+#length
+length(vec)
+# largest number
+max(vec)
+#smallest number
+min(vec)
+#sum of elements
+sum(vec)
+#product of elements
+prod(vec)
+# sorting
+sort(vec)
+
+```
+
+## Special Types of Vectors {.scrollable}
+
+::: centre
+-   Character Vectors
+-   Logical Vectors
+-   Factors
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Character Vectors
+sname <- c("Raju","abdul","Soha")
+sname
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# logical Vectors
+a <- c(7, 2, 6, 10, 4, 1, 3)
+a
+b <- a<3 | a>=6
+b
+
+```
+:::
+
+## Special Types of Vectors {.scrollable}
+
+::: centre
+-   Factors
+-   Rate my teaching:joy:
+-   Good=1, Very good=2, Best=3
+-   ten students' response are recorded in numbers
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# ratings in numbers
+qt <- c(3, 2, 1, 1, 2, 3, 2, 1, 3, 3)
+labelnames <- c("good", "very good", "best")
+#creating a factor vector
+fqt <- factor(qt,labels = labelnames)
+qt
+fqt
+
+```
+:::
+
+## Matrices {.scrollable}
+
+::: centre
+-   A matrix is a collection of data elements arranged in a two-dimensional rectangular layout.
+-   all the elements in a matrix are of the same data type
+-   Function `matrix` is used to create matrix
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+m1 <- matrix(c(1, 2, 3, 4, 5, 6), nrow= 3, ncol = 2, byrow = TRUE)
+# nrow- specify number of rows
+# ncol-specify the number of columns
+#byrow- fill the matrix in rows with the data supplied 
+m1
+
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+
+m2 <- matrix(c(1, 2, 3, 4, 5, 6), nrow= 3, ncol = 2, byrow = FALSE)
+m2
+
+```
+:::
+
+## Other functions to create matrices {.scrollable}
+
+-   Other ways to create matrix
+-   By using functions `dim`, `cbind` and `rbind`
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# Use of `dim` function
+x <- 1:12
+dim(x) <- c(3,4) 
+x
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# Use of `dim` function
+dim(x) <- c(4,3)
+x
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# Use of `rbind` function
+# rows must have same length 
+r1 <- 1:3
+r2 <- c(4, 5, 6)
+rm <- rbind(r1, r2)  
+rm 
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# Use of `cbind` function
+# columns must have same length 
+c1 <- 1:3
+c2 <- c(10, 9, 8)
+c3 <- c(20, 5, 15)
+cm <- cbind(c1, c2, c3)  
+cm 
+
+```
+:::
+
+## Names and indexing in Matrices {.scrollable}
+
+-   Column names and row names
+-   Extracting a specific element(s)
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+cm 
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Names of columns and rows
+colnames(cm) <- c("Eco", "Hist", "Pol")
+
+rownames(cm) <- c("SI", "SII", "SIII")
+cm
+
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Extracting `Pol` in `SIII`
+cm[3,3]
+
+
+```
+:::
+
+. . .
+
+-   Extract first row and all columns
+-   Extract second column and all rows
+-   Extract all rows, second and third columns
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Extract first row and all columns
+cm[1,]
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Extract second column and all rows
+cm[,2]
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Extract first row and second column
+cm[,c(2,3)]
+
+```
+:::
+
+## Matrix manipulations {.scrollable}
+
+::: centre
+-   all the mathematical functions available for vectors are applicable on a matrix
+-   all operations are applied on each element in a matrix
+-   Multiply the matrix `m1` with `3`
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# ratings in numbers
+m1 <- matrix(c(1, 2, 3, 4, 5, 6), nrow= 3, ncol = 2, byrow = TRUE)
+# Multiplying matrix m1 by 3
+m3 <- m1*3
+m1
+m3
+```
+:::
+
+. . .
+
+-   Mathematical operations-for example matrix multiplication
+-   Rule of dimensionality must satisfy
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# ratings in numbers
+m1 <- matrix(c(1, 2, 3, 4, 5, 6), nrow= 3, ncol = 2, byrow = TRUE)
+# Multiplying matrix m1 by 3
+m1
+dim(m1)
+
+```
+:::
+
+. . .
+
+-   create another matrix with `2 rows` and `3 columns`
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+m4 <- matrix(c(1, 2, 3, 4, 5, 6), nrow= 2, ncol = 3, byrow = TRUE)
+dim(m4)
+# Multiplying matrix m1 with m4 
+m5 <- m1%*%m4
+m5
+
+```
+:::
+
+## Lists {.scrollable}
+
+::: centre
+-   In `R` a **list** is a generic collection of objects
+-   Each component can have different types of data
+-   `mylist <- list(name1=component1, name2=component2, ...)`
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# generate a list of object
+
+mylist <- list(A=seq(10, 30,5), student="aadil", idm=diag(3))
+
+#print my list
+
+mylist
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# generate a list of object
+
+mylist <- list(A=seq(10, 30,5), student="aadil", idm=diag(3))
+
+#print vector names
+names(mylist)
+
+
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# generate a list of object
+
+mylist <- list(A=seq(10, 30,5), student="aadil", idm=diag(3))
+
+#print component A
+mylist$A
+
+
+```
+:::
+
+## Data Frames {.scrollable}
+
+-   An object consisting of several variables
+-   Rectangular shape
+-   rows representing observational units
+-   columns representing the variables
+-   Is it matrix?
+-   No
+-   Matrix include only one type of data
+-   Data frame can include different types of data
+-   Use the command `data.frame` or `as.data.frame` to transform into data frame
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# Creating a data frame
+
+# Define a vector 
+year <- c( 1991, 1992, 1993, 1994, 1995)
+
+GDP <- c(200, 250, 300, 320, 400)
+
+INV <- c(100, 150, 100, 120, 200)
+
+macro_mat <- cbind(GDP, INV)
+
+rownames(macro_mat) <- year
+
+macro_mat
+
+# create data frame
+
+macro <- as.data.frame(macro_mat)
+macro
+```
+:::
+
+## Accessing Data frame {.scrollable}
+
+-   Accessing a single variable
+-   Generating a new variable
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+# Existing data frame
+macro
+#Accessing the GDP data Only
+macro$GDP
+
+# Generating a new variable in the data frame
+macro$lnGDP <- log(macro$GDP)
+
+# Using `with` function
+macro$lnINV <- with(macro,log(INV))
+
+#Using `attach()` function
+attach(macro)
+macro$total <- GDP+INV
+detach(macro)
+
+# Results
+macro
+
+
+```
+:::
+
+## Creating a subset of data frame {.scrollable}
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: TRUE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+#Existing data frame
+macro
+
+# Taking subset
+subdata <- subset(macro, total>400)
+
+subdata
+```
+:::
+
+#  {background-image="images/foggy.webp"}
+
+:::: r-fit-text
+::: center
+[**THANKS**]{style="color: red;"}
+:::
+::::

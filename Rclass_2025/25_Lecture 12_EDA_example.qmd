@@ -1,0 +1,231 @@
+---
+title: "Exploratory Data Analysis"
+author: "Zulquar Nain"
+format: 
+  revealjs:
+    incremental: true
+    scrollable: true
+    slide-number: c/t
+    theme: dark
+    preview-links: auto
+    chalkboard: 
+      boardmarker-width: 5
+editor: visual
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(quantmod)
+library(tidyquant)
+library(broom)
+library(ggpubr)
+library(zoo)
+library(corrplot)
+library(tseries)
+library(car)
+```
+
+## What is EDA ?
+
+-   Statistical approach of analyzing datasets and summarizing their main characteristics.
+
+-   Statistics and visualization techniques used to explore data and discover patterns.
+
+-   main idea is to better understand the data.
+
+## Indian Stock Market - A Case Study
+
+-   Indian sectoral Indices
+
+-   The dataset comprises three sectoral indices from 2020 to 2025
+
+. . .
+
+### R packages required
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# To attach the package
+library(tidyverse)
+library(quantmod)
+library(tidyquant)
+library(broom)
+library(ggpubr)
+library(zoo)
+library(corrplot)
+library(tseries)
+library(car)
+```
+
+# Questions to Explore
+
+1.  **What is the overall trend in sector indices from 2020 to 2025?**
+2.  **Are daily returns normally distributed?**
+3.  **Is there a significant difference between average returns of sectors?**
+4.  **Are sector returns correlated?**
+5.  **Can we predict Bank returns based on IT and FMCG returns?**
+
+## 1. Import the data
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Define the list of sector symbols (from Yahoo Finance)
+symbols <- c("^NSEBANK", "^CNXIT", "^CNXFMCG")
+
+# Download data for each symbol from Yahoo Finance
+# getSymbols() fetches the historical price data
+# Here map() is for looping that is downloads stock data for each symbol and collects all the results into a list called data_list
+# .x is just a placeholder. Typically, .x is used inside functions like purrr::map() or lapply(), where it represents each element of a list or vector you are looping over.
+
+data_list <- map(
+  symbols,
+  ~ getSymbols(.x, src = "yahoo", from = "2020-01-01", 
+               to = Sys.Date(), auto.assign = FALSE)
+)
+
+# Assign readable names to the downloaded data
+# This matches the downloaded list to sector names
+names(data_list) <- c("NIFTY_BANK", "NIFTY_IT", "NIFTY_FMCG")
+
+# Convert each stock data into a tidy format
+# Extract columns, rename them, add the Date and Sector Index
+sector_tbl <- map2(data_list, names(data_list), ~ {
+  
+  # Convert xts object to tibble (dataframe)
+  df <- as_tibble(as.data.frame(.x))
+  
+  # Rename the columns for clarity
+  colnames(df) <- c("Open", "High", "Low", "Close", "Volume", "Adjusted")
+  
+  # Add the Date column (index of xts object)
+  df <- df %>% mutate(Date = index(.x))
+  
+  # Add a new column "Index" to identify the sector
+  df %>%
+    mutate(Index = .y) %>%
+    select(Date, Index, Close)   # Keep only relevant columns
+})
+
+# Combine all sectors into one dataframe
+# Bind rows of all sector tibbles into a single dataframe
+sector_df <- bind_rows(sector_tbl)
+
+# Ensure the Date column is in Date format
+sector_df$Date <- as.Date(sector_df$Date)
+
+# View the structure of sector_df
+glimpse(sector_df)
+```
+
+## 2. Overall Trend in Sector Indices
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+sector_df %>%
+  ggplot(aes(x = Date, y = Close, color = Index)) +
+  geom_line() +
+  labs(title = "Sector Indices Closing Prices (2020-2025)", x = "Date",
+       y = "Closing Price (INR)") +
+  theme_minimal()
+```
+
+**Interpretation:** All sectors show upward trends with some volatility, especially Banking.
+
+## 3. Calculating Daily Returns
+
+```{r}
+#| echo: true
+#| output-location: fragment
+sector_returns <- sector_df %>%
+  group_by(Index) %>%
+  arrange(Date) %>%
+  mutate(Return = (Close / lag(Close)) - 1) %>%
+  drop_na()
+# View the structure of sector_df
+glimpse(sector_returns)
+
+```
+
+## 4. Distribution of Daily Returns
+
+```{r}
+#| echo: true
+#| output-location: fragment
+sector_returns %>%
+  ggplot(aes(x = Return, fill = Index)) +
+  geom_histogram(bins = 50, alpha = 0.6, position = "identity") +
+  facet_wrap(~Index, scales = "free") +
+  labs(title = "Histogram of Daily Returns", x = "Daily Return",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+## 5. Normality Check with QQ Plot
+
+```{r}
+#| echo: true
+#| output-location: fragment
+sector_returns %>%
+  ggqqplot(x = "Return", facet.by = "Index", color = "Index", add = "qqline")
+```
+
+**Interpretation:** Returns show deviation from perfect normality, common in financial data.
+
+## 6. Hypothesis Testing - Are Average Returns Different?
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# ANOVA Test
+anova_test <- aov(Return ~ Index, data = sector_returns)
+summary(anova_test)
+```
+
+**Interpretation:** If p-value \< 0.05, we reject the null hypothesis and conclude that mean returns differ across sectors.
+
+## 7. Correlation Analysis
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# Reshape returns to wide format
+returns_wide <- sector_returns %>%
+  select(Date, Index, Return) %>%
+  pivot_wider(names_from = Index, values_from = Return)
+
+# Correlation matrix
+cor_matrix <- cor(returns_wide %>% select(-Date), use = "complete.obs")
+
+# Correlation plot
+corrplot(cor_matrix, method = "color", type = "upper", 
+         addCoef.col = "black", tl.cex = 0.8, number.cex = 0.7,
+         title = "Correlation Between Sector Returns", mar = c(0,0,1,0))
+```
+
+**Interpretation:** Positive correlations imply that sectors often move together. Banking and IT sectors show moderate correlation.
+
+## 8. Predict Banking Returns using Regression Analysis
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# Simple regression model
+regression_model <- lm(NIFTY_BANK ~ NIFTY_IT + NIFTY_FMCG, data = returns_wide)
+summary(regression_model)
+```
+
+**Interpretation:** - Coefficients tell us how much Bank returns change with IT and FMCG. - If p-values \< 0.05, predictors are significant. - Adjusted R-squared shows goodness of fit.
+
+## 9. Final Inference
+
+**Summary:** - All sectors have shown an overall upward trend. - Returns are not perfectly normal. - There are significant differences in sector returns. - Sector returns are moderately correlated. - IT and FMCG sector returns are useful predictors of Bank sector returns.
+
+**Conclusion:** Investors can use sector correlations and predictive models for portfolio diversification and risk management.
+
+# THANKS

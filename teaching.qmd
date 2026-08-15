@@ -1,0 +1,43 @@
+---
+title: "Teaching"
+listing:
+  - id: course-pages
+    contents: courses
+    type: default
+    sort: "date desc"
+    fields: [image, title, subtitle, description]
+    image-height: "150px"
+    categories: false
+    feed: false
+    filter-ui: false
+    sort-ui: false
+---
+
+```{r setup, include=FALSE}
+source("R/helpers.R")
+```
+
+My teaching interests complement my research and span the theoretical, empirical, and policy-oriented foundations of economics: microeconomic and macroeconomic theory, econometrics, mathematical economics and optimization, and monetary economics.
+
+I teach across the undergraduate, postgraduate, and doctoral programmes, at the Department of Economics, Aligarh Muslim University. 
+
+Alongside the theory courses, I teach computational and econometric methods, including time series, panel data, financial econometrics, and research methodology. I try to integrate teaching these courses in R, with an emphasis on reproducibility. 
+
+
+## Course Websites
+
+Slides, datasets and worked examples for the courses that have their own
+material online. Everything is free to use.
+
+::: {#course-pages}
+:::
+
+```{r teaching, results="asis"}
+print_teaching()
+```
+
+*Earlier (2014–2018): Assistant Professor, Department of Economics, MANUU, Hyderabad.*
+
+```{r advising, results="asis"}
+print_advising()
+```

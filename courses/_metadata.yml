@@ -1,0 +1,10 @@
+# Settings shared by every course page in this folder.
+# Anything set here can still be overridden in an individual .qmd.
+toc: true
+toc-depth: 2
+page-layout: article
+
+# Course pages are hand-written markdown — no R code runs in them,
+# so they do not need R/helpers.R the way the Excel-driven pages do.
+execute:
+  enabled: false

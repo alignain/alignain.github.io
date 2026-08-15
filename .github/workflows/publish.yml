@@ -1,0 +1,75 @@
+name: Publish website to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The built site is uploaded as a Pages artifact instead of being committed
+# to a gh-pages branch, so nothing here needs write access to the repo.
+# pages + id-token are what actions/deploy-pages needs to mint a deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. cancel-in-progress stays false so a run that is
+# already publishing is allowed to finish rather than leaving Pages
+# half-updated.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e "install.packages(c('readxl','dplyr','glue','plotly','httr2','jsonlite','rvest','httr','tidyr','knitr','rmarkdown','shinylive'))"
+
+      # splicer-app/ is generated, not committed. shinylive resolves the app's
+      # own packages (shiny, bslib, readxl, zoo, plotly, DT, writexl) straight
+      # from the webR repo, so they do NOT need installing on the runner.
+      - name: Cache Shinylive web assets
+        uses: actions/cache@v4
+        with:
+          # shinylive stores the webR runtime under rappdirs::user_cache_dir("shinylive")
+          path: ~/.cache/shinylive
+          key: shinylive-${{ runner.os }}-${{ hashFiles('software/app.R', 'software/build-shinylive.R') }}
+          restore-keys: |
+            shinylive-${{ runner.os }}-
+
+      - name: Build the Shinylive app
+        working-directory: software
+        run: Rscript build-shinylive.R
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render the site
+        uses: quarto-dev/quarto-actions/render@v2
+
+      # output-dir in _quarto.yml is _site, so that is what gets published.
+      - name: Upload the rendered site as a Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

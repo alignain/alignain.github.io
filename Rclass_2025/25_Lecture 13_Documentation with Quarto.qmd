@@ -1,0 +1,365 @@
+---
+title: "Mastering Quarto: Writing, Executing Code, and YAML Options"
+author: "Md. Zulquar Nain"
+format: 
+  revealjs:
+    scrollable: true
+    incremental: true
+    slide-number: c/t
+    theme: dark
+    preview-links: auto
+    chalkboard: 
+      boardmarker-width: 5
+editor: visual
+---
+
+
+
+# Introduction to Quarto
+
+- **Quarto** is an open-source scientific and technical publishing system.
+- Create dynamic documents: Word, PDF, HTML, Slides.
+- Supports R, Python, Julia, and Observable.
+
+---
+
+# Why Use Quarto?
+
+- Professional reports and reproducible research.
+
+- One document ➔ multiple formats.
+
+- Text + Code + Output seamlessly integrated.
+
+---
+
+# Writing Content in Quarto
+
+- **Headings**
+
+- **Text formatting**
+
+- **Lists**
+
+- **Images**
+
+- **Tables**
+
+- **Equations**
+
+- **Code blocks**
+
+---
+
+# Headings, Sections, Subsections
+
+```markdown
+# Section
+## Subsection
+### Sub-subsection
+```
+
+- `#` for Heading 1
+
+- `##` for Heading 2
+
+- `###` for Heading 3
+
+---
+
+# Text Formatting
+
+| Syntax | Effect |
+|:------|:------|
+| `**bold**` | **bold** |
+| `*italic*` | *italic* |
+| `~~strikethrough~~` | ~~strikethrough~~ |
+| `<u>underline</u>` | <u>underline</u> |
+
+Paragraphs are left-justified automatically.
+
+---
+
+# Inserting Images
+
+```markdown
+![Alt Text](amulogo.jpg)
+```
+![Alt Text](amulogo.jpg)
+Displays the AMU logo.
+
+---
+
+# Creating Tables
+
+```markdown
+| Name  | Age | City  |
+|-------|-----|------|
+| John  | 25  | NY   |
+| Ayesha| 22  | London |
+| Raj   | 28  | Mumbai |
+```
+
+| Name  | Age | City  |
+|-------|-----|------|
+| John  | 25  | NY   |
+| Ayesha| 22  | London |
+| Raj   | 28  | Mumbai |
+
+---
+
+# Writing Equations
+
+**Inline**:
+
+```markdown
+The formula is $a^2 + b^2 = c^2$.
+```
+$a^2 + b^2 = c^2$
+
+
+**Block**:
+
+```markdown
+$$
+f(x) = ax^2 + bx + c
+$$
+```
+$$
+f(x) = ax^2 + bx + c
+$$
+---
+
+# Writing and Executing Code
+
+General syntax:
+
+```markdown
+```{language}
+# code here
+```
+```
+
+Supported languages:
+
+- R
+
+- Python
+
+- Julia
+
+
+---
+
+# Example: R Code Block
+
+
+```{r}
+#| echo: true
+#| evaluation: true
+#| output-location: fragment
+x <- c(1,2,3,4,5)
+mean(x)
+```
+
+
+
+
+<!-- ```{r} -->
+<!-- #| echo: false -->
+<!-- #| evaluation: true -->
+
+<!-- x <- c(1,2,3,4,5) -->
+<!-- mean(x) -->
+<!-- ``` -->
+
+
+---
+
+
+# Controlling Code Behavior
+
+Chunk options:
+
+- `echo`: Show code?
+
+- `eval`: Run code?
+
+- `warning`: Show warnings?
+
+- `error`: Show errors?
+
+```yaml
+execute:
+  echo: true
+  eval: true
+  warning: false
+  error: false
+```
+
+---
+
+# YAML Basics
+
+Placed at top between `---` lines.
+
+Controls metadata and formatting.
+
+Simple YAML:
+
+```yaml
+---
+title: "Sample Report"
+author: "A Student"
+format: docx
+editor: visual
+---
+```
+
+---
+
+# Common Metadata Fields
+
+| Field | Purpose |
+|:------|:--------|
+| `title:` | Document title |
+| `author:` | Author(s) |
+| `date:` | Document date |
+| `format:` | Output format (docx, html, pdf) |
+
+---
+
+# Format Options
+
+Simple:
+
+```yaml
+format: docx
+```
+
+Multiple outputs:
+
+```yaml
+format:
+  html:
+    toc: true
+  pdf:
+    toc: true
+  docx:
+    toc: true
+```
+
+---
+
+# Word-Specific Options
+
+```yaml
+format:
+  docx:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    reference-doc: custom.docx
+```
+
+- `toc:` Table of contents
+
+- `number-sections:` Number headings
+
+- `reference-doc:` Custom Word template
+
+---
+
+# Appearance Customization
+
+```yaml
+theme: cosmo
+mainfont: "Times New Roman"
+fontsize: 12pt
+geometry: margin=1in
+```
+
+---
+
+# Citations and Bibliography
+
+```yaml
+bibliography: references.bib
+csl: apa.csl
+citeproc: true
+```
+
+- `bibliography:` BibTeX file
+
+- `csl:` Citation Style Language file
+
+---
+
+# Full YAML Example
+
+```yaml
+---
+title: "Research Report"
+author: "A Student"
+date: today
+format:
+  docx:
+    toc: true
+    number-sections: true
+execute:
+  echo: true
+theme: cosmo
+mainfont: "Georgia"
+fontsize: 11pt
+geometry: margin=1in
+bibliography: refs.bib
+csl: apa.csl
+editor: visual
+---
+```
+
+---
+
+# Important Notes
+
+✅ YAML is **space sensitive**, not tab sensitive.
+
+✅ Always double-check filenames.
+
+✅ Indent properly inside YAML blocks.
+
+---
+
+# Practice Exercise ✍️
+
+✅ Create a document with:
+
+- Title, Author
+
+- Headings and Subheadings
+
+- Bold and italic text
+
+- An image
+
+- A table
+
+- An equation
+
+- A code chunk (R/Python)
+
+- A full YAML
+
+---
+
+# References
+
+- [Quarto Documentation](https://quarto.org/docs/)
+
+- [Quarto YAML Basics](https://quarto.org/docs/reference/projects/yaml-basics.html)
+
+- [Quarto Code Execution](https://quarto.org/docs/computations/running-code.html)
+
+# Thank You 🙏
+
+Happy Writing with Quarto!

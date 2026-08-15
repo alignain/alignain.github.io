@@ -1,0 +1,248 @@
+---
+title: "Exploring the Imported Data"
+author: "Md Zulquar Nain"
+format: 
+  revealjs:
+    incremental: true
+    slide-number: c/t
+    theme: dark
+    preview-links: auto
+    chalkboard: 
+      boardmarker-width: 5
+editor: visual
+---
+
+## Importing the Data File
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 4.5
+#| evaluation: false
+# importing data from `csv` file
+datai <- read.csv("hsbraw.csv")
+```
+
+-   `datai` - name of the imported data file in`R`
+
+-   `hsbraw.csv` name of the `csv` file being imported
+
+## Exploring the Dataset I {background="#4682B4"}
+
+-   Class, structure and dimension of the dataset
+
+. . .
+
+```{r }
+#| echo: true
+#| output-location: fragment
+
+# Structure of the data
+str(datai)
+```
+
+. . .
+
+```{r }
+#| echo: true
+#| output-location: column-fragment
+
+
+#Class of the data
+class(datai)
+
+```
+
+. . .
+
+```{r }
+#| echo: true
+#| output-location: column-fragment
+
+# Dimension of the data
+dim(datai)
+
+
+```
+
+## Exploring the Dataset II {background="#4682B4"}
+
+-   First `n` rows of observations of the data set
+    -   `head(data.frame name, n)`
+-   Last `n` rows of observations of the data set
+    -   `tail(data.frame name, n)`
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# View top two rows of the data
+head(datai,2)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# View bottom two rows 
+tail(datai,2)
+```
+
+## Creating New Variables {background="#4682B4"}
+
+-   Adding TWO variables & Creating a new ONE
+-   Creating a new variable by taking average of two variables
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+ssum <- datai$read+datai$write
+savg <- (datai$read+datai$write)/2
+
+```
+
+-   alternate method
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+attach(datai)
+ssum1 <- read+write
+savg1 <- (read+write)/2
+detach(datai)
+
+```
+
+## Creating New Variables {background="#4682B4"}
+
+-   Another method
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+dataim<- transform(datai,sum2=read+write,smean=(read+write)/2)
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+head(datai, 2)
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+head(dataim,2)
+
+```
+
+
+## Sorting/Ranking/Ordering {.scrollable}
+
+-   Use `order()`
+
+-   sort by a variable
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+max(dataim$write)
+min(dataim$write)
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+head(dataim,4)
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+datais <- dataim[order(dataim$write),]
+
+```
+
+```{r}
+#| echo: true
+#| output-location: fragment
+head(datais,4)
+
+```
+
+. . .
+
+-   sort by descending order
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+dataisd <- dataim[order(-dataim$write),]
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+head(dataisd,4)
+
+```
+
+
+## Reshaping
+
+-   Transpose
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: column-fragment
+
+dataA <- data.frame(id=c(1,1,2,2),
+                    time=c(1,2,1,2),
+                    x1=c(5,2,4,6))
+dim(dataA)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: column-fragment
+trdataA <- t(dataA)
+dim(trdataA)
+```
+
+
+# THANKS {background-color="aquamarine"}

@@ -1,0 +1,400 @@
+---
+title: "Tidyverse"
+author: "Md. Zulquar Nain"
+format: 
+  revealjs:
+    scrollable: true
+    incremental: true
+    slide-number: c/t
+    theme: dark
+    preview-links: auto
+    chalkboard: 
+      boardmarker-width: 5
+editor: visual
+---
+
+## What is Tidyverse?
+
+-   **The Tidyverse** is a collection of R packages for data science that share a common design philosophy, grammar, and data structures.
+
+-   It makes it easy to install and load core packages with a single command.
+
+-   It includes packages that are used in everyday data analysis.
+
+## Why use Tidyverse ?
+
+-   **Consistency**: Consistent syntax and data structures across packages.
+
+-   **Ease of Use**: Simple, intuitive functions.
+
+-   **Performance**: Efficient and optimized for modern data science.
+
+-   **Versatility**: Ideal for various tasks in data manipulation, visualization.
+
+-   **Comprehensive**: Complete package for all stages of data science workflows.
+
+## Key Packages in Tidyverse {.scrollable}
+
+-   **`ggplot2`**: Data visualization.
+-   **`dplyr`**: Data manipulation.
+-   **`tidyr`**: Data tidying.
+-   **`readr`**: Data input.
+-   **`purrr`**: Functional programming.
+-   **`tibble`**: Data frames.
+-   **`stringr`**: String manipulation.
+-   **`forcats`**: Factor handling.
+-   **`lubridate`**: Date and time manipulation.
+
+# Installation and Setup
+
+-   To install Tidyverse: install.packages("tidyverse")
+
+-   To load Tidyverse into your current R session: library(tidyverse)
+
+## Pipe Operator( %\>% ) {.scrollable}
+
+-   The pipe operator **(%\>%)** or **(\|\>)** is used to pass the result of one function directly to the next function in a sequence, making your code more readable and intuitive.
+
+-   Pipes allow you to write operations sequentially, enhancing clarity and reducing complexity.
+
+-   Syntax:
+
+    `data %\>% function1() %\>% function2() %\>% function3()`
+
+-   **data**: The input data is passed through the pipe.
+
+-   **function1(), function2(), function3()**: These functions operate on the data in sequence, with the output of one function feeding directly into the next.
+
+-   The shortcut to type the pipe operator in RStudio is given by CTRL/CMD + Shift + M.
+
+------------------------------------------------------------------------
+
+## Example of pipe operators {.scrollable}
+
+Simulating a sample of data by using the function sample we draw randomly (without replacement) 5 numbers between 1 and 20 (1:20) and compute the log transformation of the vector.
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# without pipe operator
+set.seed(44)
+x = sample(1:20, 5)
+x
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+log(x)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#with pipe operator
+x |> log()
+#it's also possible to omit the parentheses given that there is no input
+
+
+```
+
+------------------------------------------------------------------------
+
+# Package `dplyr`
+
+## Data Manipulation with `dplyr` {.scrollable}
+
+-   dplyr is designed for easy data manipulation using verbs that describe the operations you want to perform. These common functions are:
+
+-   `filter()` : Select rows based on conditions.
+
+-   `select()` : Choose columns to keep.
+
+-   `mutate()`: Add new columns or modify existing ones.
+
+-   `arrange()`: Sort the data.
+
+-   `summarize()`: reduces multiple values down to a single summary
+
+-   `group_by()`: Aggregate data by groups.
+
+------------------------------------------------------------------------
+
+## `dplyr` verbs {.scrollable}
+
+Taking *diamonds* dataset of the prices and other attributes of almost 54,000 diamonds **(see ?diamonds)**.
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# understand the dataset of diamonds
+library(ggplot2)
+class(diamonds)
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+str(diamonds)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# we can also use tidyverse function
+library(dplyr)
+glimpse(diamonds)
+
+```
+
+------------------------------------------------------------------------
+
+## `select()` {.scrollable}
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+diamonds %>% select(carat)
+```
+
+. . .
+
+-   Selecting more than one column :
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+diamonds %>% select(carat, cut, color, price)
+```
+
+-   Alternate choices
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+
+diamonds %>% select(carat : color, price)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#selcting columns starting with 'c'
+diamonds %>% select(starts_with("c"))
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#select all the columns but carat
+diamonds %>% select(-carat)
+```
+
+-   Now you do this select all the columns but not the ones with a name starting with “c”
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+diamonds %>% select(- starts_with("c"))
+```
+
+------------------------------------------------------------------------
+
+## `filter` {.scrollable}
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+diamonds %>% filter(cut == "Premium")
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#include more conditions by using '&' or 'comma'
+diamonds %>% filter(cut == "Premium" & color == "D") 
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#The output of a selection can be saved in a new data frame
+myselection = diamonds %>% filter(between(price, 500,600))
+```
+
+------------------------------------------------------------------------
+
+## `summarise` {.scrollable}
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#mean and median of price.
+
+diamonds %>% 
+  summarise(mean(price),
+            median(price))
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#the number of diamonds with a price > 15000$
+diamonds %>% 
+  summarise(veryexp = sum(price > 15000),
+            veryexpprop = mean(price>15000),
+            veryexpperc = mean(price>15000)*100)
+```
+
+------------------------------------------------------------------------
+
+## `group_by` {.scrollable}
+
+. . .
+
+-   **`group_by()`** is used to group rows of a data frame by one or more columns.
+
+-   This helps in performing operations like summarizing or aggregating data by categories.
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+diamonds %>% 
+  group_by(cut,color) %>% 
+  summarise(mean(price)) 
+
+```
+
+------------------------------------------------------------------------
+
+## `mutate` {.scrollable}
+
+-   used to create new column or modify existing columns in the data frame
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+newdiamonds = diamonds %>% 
+  mutate(newcol = ifelse(price < 1000, "Yes", "No"))
+# Create a new column to categorize products as "Yes" if the price is less than $1000, and "No" otherwise.
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Derive the frequency distribution of 'newcol' along with percentages.
+newdiamonds %>% 
+  count(newcol) %>% 
+  #summarise(perc=n/nrow(newdiamonds)*100)
+  mutate(perc=n/nrow(newdiamonds)*100)
+```
+
+------------------------------------------------------------------------
+
+## `arrange` {.scrollable}
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#sort diamonds according to price
+diamonds %>% 
+  arrange(price) %>% 
+  tail
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+diamonds %>% 
+  arrange(desc(price))
+```
+
+------------------------------------------------------------------------
+
+## Example with dplyr verbs combined {.scrollable}
+
+-   Taking 'mtcars' and filtering rows where mpg \> 20, select specific columns, create a new column, and arrange the data by mpg in descending order.
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+library(dplyr)
+
+mtcars %>% 
+  filter(mpg > 20) %>%
+  select(mpg, wt, hp) %>% 
+  mutate(mpg_per_weight = mpg / wt) %>% 
+  arrange(desc(mpg))
+
+```
+
+------------------------------------------------------------------------
+
+# Thanks

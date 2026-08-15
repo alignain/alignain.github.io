@@ -1,0 +1,121 @@
+---
+title: ""
+page-layout: custom
+anchor-sections: false
+---
+
+```{r setup, include=FALSE}
+source("R/helpers.R")
+```
+
+```{=html}
+<!-- Full-page animated economics background (see background.js) -->
+<canvas id="econ-bg" aria-hidden="true"></canvas>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-card">
+    <img class="portrait" src="images/profile.jpeg" alt="Md Zulquar Nain">
+    <h1 class="hero-name">Md Zulquar Nain, Ph.D.</h1>
+    <p class="hero-role">Assistant Professor of Economics</p>
+    <p class="hero-affil">Department of Economics · Faculty of Social Sciences · Aligarh Muslim University</p>
+    <p class="hero-blurb">
+      My research investigates the interplay among <strong>policy, financial systems,
+      and the macroeconomy</strong> - in particular the interaction of monetary and
+      fiscal policies, uncertainty, and their impact on growth, inflation, and
+      financial stability in India and other emerging economies.
+    </p>
+    <div class="hero-buttons">
+      <a class="btn-pill btn-filled" href="cv.qmd">Curriculum Vitae</a>
+      <a class="btn-pill btn-outline" href="research.qmd">Research</a>
+    </div>
+    <div class="hero-socials">
+      <a href="mailto:zulquar.ec@amu.ac.in" aria-label="Email"><i class="fa-solid fa-envelope"></i></a>
+      <a href="https://scholar.google.co.in/citations?user=7Db2EHMAAAAJ&hl=en" aria-label="Google Scholar"><i class="fa-brands fa-google-scholar"></i></a>
+      <a href="https://amu.ac.in/faculty/economics/md-zulquar-nain" aria-label="AMU faculty page"><i class="fa-solid fa-building-columns"></i></a>
+      <a href="cv.pdf" aria-label="Download CV"><i class="fa-solid fa-file-lines"></i></a>
+    </div>
+  </div>
+  <a href="#interests" class="hero-scroll" aria-label="Scroll down"><i class="fa-solid fa-chevron-down"></i></a>
+</section>
+
+<!-- ============ RESEARCH INTERESTS ============ -->
+<section id="interests" class="section">
+  <div class="section-inner">
+    <h2 class="section-title">Research Interests</h2>
+    <div class="cards-3">
+      <div class="card-interest">
+        <i class="fa-solid fa-landmark"></i>
+        <h3>Macroeconomic Policy &amp; Stabilization</h3>
+        <p>Transmission mechanisms and effectiveness of monetary and fiscal policy, and how economic uncertainty and FinTech developments challenge traditional policy frameworks.</p>
+      </div>
+      <div class="card-interest">
+        <i class="fa-solid fa-coins"></i>
+        <h3>Public Finance, Growth &amp; Financial Stability</h3>
+        <p>The role of public finance, taxation, government expenditure, and sovereign debt in long-term growth and the stability of financial markets.</p>
+      </div>
+      <div class="card-interest">
+        <i class="fa-solid fa-globe"></i>
+        <h3>International Trade &amp; Capital Flows</h3>
+        <p>How trade policies, tariffs, and fiscal incentives shape global trade patterns and capital flows; the macroeconomic consequences of protectionism and shifts in global value chains.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SELECTED PUBLICATIONS ============ -->
+<section id="work" class="section">
+  <div class="section-inner">
+    <h2 class="section-title">Selected Publications</h2>
+```
+
+```{r selected-pubs, results="asis"}
+print_selected_publications_html(3)
+```
+
+```{r scholar-line, results="asis"}
+scholar_line_html()
+```
+
+```{=html}
+  </div>
+</section>
+
+<!-- ============ DATA CORNER ============ -->
+<section id="data-corner" class="section">
+  <div class="section-inner">
+    <h2 class="section-title">Data Corner — India</h2>
+    <p class="chart-note">Monthly headline CPI inflation and industrial production growth, fetched live from MoSPI at render time.</p>
+```
+
+```{r econ-chart}
+econ_chart()
+```
+
+```{r econ-note, results="asis"}
+cat("<p class='chart-source'>")
+econ_latest_note()
+cat(" &nbsp;·&nbsp; Source: <a href='https://esankhyiki.mospi.gov.in' target='_blank'>MoSPI</a>, All-India. Series are chain-linked across base revisions.</p>")
+```
+
+```{=html}
+  </div>
+</section>
+
+<!-- ============ CONTACT STRIP ============ -->
+<section id="contact" class="band">
+  <div class="section-inner band-inner">
+    <div>
+      <h2>Get in touch</h2>
+      <p>Department of Economics, Aligarh Muslim University, Aligarh, UP 202002, India</p>
+    </div>
+    <a class="btn-pill btn-filled-light" href="mailto:zulquar.ec@amu.ac.in">zulquar.ec@amu.ac.in</a>
+  </div>
+</section>
+
+<!-- Estimated IRF surface used by the background animation. Must load BEFORE
+     background.js, which reads window.__IRF_SURFACE__ at startup and falls
+     back to a parametric surface if it is absent. -->
+<script src="irf-surface.js"></script>
+<script src="background.js"></script>
+```

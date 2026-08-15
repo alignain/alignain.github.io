@@ -1,0 +1,409 @@
+---
+title: "Descriptive Statistics"
+author: "Md Zulquar Nain"
+format: 
+  revealjs:
+    incremental: true
+    scrollable: true
+    slide-number: c/t
+    theme: dark
+    preview-links: auto
+    chalkboard: 
+      boardmarker-width: 5
+editor: visual
+---
+
+
+## Importing the Data File
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 4.5
+#| evaluation: false
+# importing data from `csv` file
+datai <- read.csv("hsbraw.csv")
+```
+
+-   `datai` - name of the imported data file in`R`
+
+-   `hsbraw.csv` name of the `csv` file being imported
+
+## Exploring the Dataset I {background="#4682B4"}
+
+-   Class, structure and dimension of the dataset
+
+. . .
+
+```{r }
+#| echo: true
+#| output-location: fragment
+
+# Structure of the data
+str(datai)
+```
+
+. . .
+
+```{r }
+#| echo: true
+#| output-location: column-fragment
+
+
+#Class of the data
+class(datai)
+
+```
+
+. . .
+
+```{r }
+#| echo: true
+#| output-location: column-fragment
+
+# Dimension of the data
+dim(datai)
+
+
+```
+
+## Exploring the Dataset II {background="#4682B4"}
+
+-   First `n` rows of observations of the data set
+    -   `head(data.frame name, n)`
+-   Last `n` rows of observations of the data set
+    -   `tail(data.frame name, n)`
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# View top two rows of the data
+head(datai,2)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# View bottom two rows 
+tail(datai,2)
+```
+
+
+# Descriptive Statistics {background="#13464F"}
+
+## Measures of Central tendency {background="#13464F"}
+
+-   For continuous variables are the
+    -   mean, median, and variance
+-   Functions in `R`
+    -   `mean()`
+    -   `median()`
+    -   `var()`
+    -   `sd()` for standard deviation
+
+## Descriptive statistics
+
+-   `summary()` function available with base `R`
+-   `mean`,`median`,`25th` and `75th` quartiles
+-   `min` and `max`
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+summary(datai)
+```
+
+## Descriptive statistics
+
+-   Selecting a specific column
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+summary(datai$read)
+
+```
+
+-   More than one column
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# create a subdata 
+subdata <- datai[,c("read","write","math")]
+# summary of the subset
+summary(subdata)
+
+```
+
+## Descriptive Statistics
+
+-   Using `describe` function form the `psych` package
+
+-   More control
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+ library(psych)
+
+describe(subdata)
+
+```
+
+## Descriptive Statistics
+
+-   Without Skewness and Kurtosis
+
+::: fragment
+```{r}
+#| echo: true
+#| output-location: fragment
+# without skewness and kurtosis
+describe(subdata, skew=FALSE) 
+```
+:::
+
+-   Without range
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+ # without range
+describe(subdata, ranges = FALSE)
+```
+
+<!-- ## Decriptive statistics -->
+
+<!-- ```{r} -->
+
+<!-- #| echo: true -->
+
+<!-- #| output-location: fragment -->
+
+<!-- # without quantiles -->
+
+<!-- describe(subdata, quant = c(0.25,0.75)) -->
+
+<!-- ``` -->
+
+<!-- ## Decriptive statistics -->
+
+<!-- ```{r} -->
+
+<!-- #| echo: true -->
+
+<!-- #| output-location: fragment -->
+
+<!-- # with quantiles -->
+
+<!-- describe(subdata, quant = c(0.25,0.75), IQR=TRUE) -->
+
+<!-- ``` -->
+
+## Descriptive Statistics
+
+-   Summary Statistics by grouping data using some specific criteria
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# generating summary statistics by grouping variable
+describeBy(subdata, datai$schtyp)
+```
+
+::: footer
+To know more about `describe` and `describeBy` function use `help(describe)` and `?describeBy`
+:::
+
+# Frequencies and Cross Tabulation {background="#13464F"}
+
+## Frequency Table
+
+-   Generating Frequency Tables
+-   frequency tables using the `table( )` function
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+table(datai$gender)
+table(datai$schtyp)
+```
+
+## Frequency Tables
+
+-   tables of proportions using the `prop.table( )` function
+-   for proportions, use output of `table()` as input to `prop.table()`
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+#saving the freq table to an object
+tableg <- table(datai$gender)
+prop.table(tableg)
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+# OR
+prop.table(table(datai$gender))
+```
+
+<!-- - marginal frequencies using margin.table( ) -->
+
+<!-- . . .  -->
+
+<!-- ```{r} -->
+
+<!-- #| echo: true -->
+
+<!-- #| output-location: fragment -->
+
+<!-- margin.table(tableg) -->
+
+<!-- ``` -->
+
+## Cross Tabulation {.scrollable}
+
+-   Two Way Tabulation
+
+-   counts in each crossing of gender and school type
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+tab2way <- table(datai$gender, datai$schtyp)
+tab2way
+
+```
+
+-   Marginal frequencies using `margin.table( )`
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+margin.table(tab2way,margin = 1)
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+margin.table(tab2way,margin = 2)
+
+```
+
+## Proportion Table
+
+-   Row proportions
+-   Proportion of gender that falls into school type
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+prop.table(tab2way, margin = 1)
+
+```
+
+-   columns proportions,
+-   Proportion of school type that falls into gender
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+prop.table(tab2way, margin = 2)
+
+```
+
+<!-- - Total Proportion  -->
+
+<!-- ```{r} -->
+
+<!-- #| echo: true -->
+
+<!-- #| output-location: fragment -->
+
+<!-- prop.table(tab2way) -->
+
+<!-- ``` -->
+
+# Correlation {background="#13464F"}
+
+## Correlation {.scrollable}
+
+-   Can use the `cor( )` function to produce correlations
+
+-   General framework `cor(x, use=, method= )`
+
+    -   `x`: Matrix or data frame
+    -   `use`: Specifies the handling of missing data
+    -   `method`: Specifies the type of correlation
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+cordata <- datai[,c("read","write","math")]
+cor(cordata,use="all.obs",method="pearson")
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+cor(cordata,use="all.obs",method="spearman")
+
+```
+
+. . .
+
+```{r}
+#| echo: true
+#| output-location: fragment
+cor(cordata,use="all.obs",method="kendall")
+
+```
+
+-   `all.obs` assumes no missing data - missing data will produce an error
+-   `complete.obs`-listwise deletion
+-   `pairwise.complete.obs`- pairwise deletion
+
+# THANKS {background-color="aquamarine"}

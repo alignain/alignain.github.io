@@ -1,0 +1,111 @@
+---
+title: "Computer Applications in Economics"
+subtitle: "ECM2073 · M.A. Economics · Aligarh Muslim University"
+description: "A hands-on introduction to R for economists - RStudio, data import, tidyverse, ggplot2, exploratory data analysis, and reproducible reporting with Quarto."
+date: 2025-01-15
+image: /images/course-rclass-2025.jpg
+image-alt: "Applications of R"
+categories: [R, Data analysis, PG]
+toc: true
+toc-title: "On this page"
+---
+
+## About the course
+
+This course teaches economics students to work with data the way applied economists do
+economists actually do: in code, reproducibly, and with the analysis, the
+output and the write-up living in one document.
+
+We start from a blank RStudio window — no prior programming assumed — and
+build up through data types, importing messy real-world files, cleaning, and
+reshaping with the tidyverse, describing and visualizing data, and finally
+writing the whole thing up in Quarto so that a report regenerates itself
+When the data changes. Examples use Indian macroeconomic and survey data sets. 
+
+
+::: {.callout-note}
+## Before the first session
+Install **R** and then **RStudio**, in that order — both are free.
+Lecture 1 walks through the installation screen by screen.
+
+* R — [cran.r-project.org](https://cran.r-project.org/)
+* RStudio Desktop — [posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop/)
+:::
+
+### What you will be able to do
+
+* Set up an R project and keep a piece of work organised and reproducible
+* Import data from CSV, Excel and text files, and export results
+* Clean, filter, reshape and merge datasets with the tidyverse
+* Produce descriptive statistics and publication-quality graphics
+* Carry out an exploratory data analysis and defend its conclusions
+* Write a report in Quarto that renders to HTML, Word or PDF
+
+## Lecture slides
+
+Slides open in the browser — use the arrow keys to move through them, and
+press `F` for full screen or `S` for the speaker notes.
+
+Lectures 8 and 12 use a different slide engine: there, press `P` for the
+presenter view and `C` to open a cloned window for a second screen.
+
+| # | Topic | Slides |
+|:--|:------|:-------|
+| 1  | Introduction to R | [Open](<../Rclass_2025/25_Lecture 1 Introduction to R.html>) |
+| 2  | House settings and packages | [Open](<../Rclass_2025/25_lecture 2 House Settings and Packages.html>) |
+| 3  | Basic operators | [Open](<../Rclass_2025/25_lecture 3_Basic Operators.html>) |
+| 4  | Data types and structures | [Open](<../Rclass_2025/25_Lecture 4 Data Types and Structure.html>) |
+| 5  | Importing and exporting data | [Open](<../Rclass_2025/25_Lecture 5 Importing and Exporting.html>) |
+| 6  | Re-cap and case studies | [Open](<../Rclass_2025/25_Lecture 6 Re-cap and Case Studies.html>) |
+| 7  | Exploring the data | [Open](<../Rclass_2025/25_Lecture 7 Exploration of Data.html>) |
+| 8  | Visualisation with base R | [Open](<../Rclass_2025/25_Lecture 8 R Base Plot.html>) |
+| 9  | Descriptive statistics | [Open](<../Rclass_2025/25_Lecture 8 Descriptive statistics.html>) |
+| 10 | The world of tidyverse | [Open](<../Rclass_2025/25_Lecture 9 Tidyverse.html>) |
+| 11 | Tidyverse — other packages | [Open](<../Rclass_2025/25_Lecture 10 Tidyverse other packages.html>) |
+| 12 | Visualisation with `ggplot2` | [Open](<../Rclass_2025/25_Lecture 11 Visualisation with GGPLOT.html>) |
+| 13 | Exploratory data analysis — a worked example | [Open](<../Rclass_2025/25_Lecture 12_EDA_example.html>) |
+| 14 | Documentation with Quarto | [Open](<../Rclass_2025/25_Lecture 13_Documentation with Quarto.html>) |
+
+## Data files
+
+Datasets used in the lectures and exercises. Right-click and choose
+*Save link as…* to download.
+
+| File | Used in |
+|:-----|:--------|
+| [`example.xlsx`](<../Rclass_2025/example.xlsx>) | Lecture 5 — importing from Excel |
+| [`example.csv`](<../Rclass_2025/example.csv>) | Lecture 5 — importing from CSV |
+| [`example.txt`](<../Rclass_2025/example.txt>) | Lecture 5 — importing delimited text |
+| [`hsbraw.csv`](<../Rclass_2025/hsbraw.csv>) | Lecture 5 — exercise |
+| [`Data.csv`](<../Rclass_2025/Data.csv>) | Lectures 6–7 — case study |
+| [`GSDP.csv`](<../Rclass_2025/GSDP.csv>) | Lecture 12 — exploratory data analysis |
+
+## Scripts and worked examples
+
+| Item | Description |
+|:-----|:------------|
+| [DIY I — script](<../Rclass_2025/DIY I.R>) | The do-it-yourself exercise as a plain R script |
+| [DIY I — compiled report](<../Rclass_2025/DIY-I.html>) | The same script rendered, so you can check your output |
+| [Example EDA in Quarto](<../Rclass_2025/25_Lecture-15_Example EDA.qmd>) | Quarto source for a complete exploratory analysis |
+
+## Assessment
+
+The course is assessed by a final project: an exploratory analysis of a
+dataset of your choosing, written up in Quarto and submitted as a single
+rendered document.
+
+| Resource | |
+|:---------|:--|
+| [Final project — sample submission](<../Rclass_2025/Final Project Sample.docx>) | What a complete submission looks like |
+| [Quarto for Word output — source](<../Rclass_2025/25_Lecture-14_Quarto for Word format.qmd>) | The `.qmd` that produces a Word document |
+| [Quarto for Word output — result](<../Rclass_2025/25_Lecture-14_Quarto for Word format.docx>) | The Word file it renders to |
+
+## Going further
+
+* [R for Data Science](https://r4ds.hadley.nz/) — Wickham, Çetinkaya-Rundel and Grolemund, free online
+* [Posit cheat sheets](https://posit.co/resources/cheatsheets/) — one-page references for dplyr, ggplot2, tidyr and more
+* [Quarto documentation](https://quarto.org/docs/guide/) — the tool this course website is built with
+
+---
+
+*Questions about the course: [zulquar.ec@amu.ac.in](mailto:zulquar.ec@amu.ac.in)*

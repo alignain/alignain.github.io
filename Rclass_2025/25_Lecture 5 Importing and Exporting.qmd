@@ -1,0 +1,294 @@
+---
+title: Importing and Exporting Data
+author: Md Zulquar Nain
+institute: AMU
+date: last-modified
+date-format: long
+format: 
+  revealjs:
+    theme: night
+   # logo: imgages/logo.png 
+    incremental: true
+    scrollable: true
+    slide-number: true
+    show-slide-number: all
+    preview-links: auto
+  pdf: default
+editor: visual
+from: markdown+emoji
+---
+
+## Importing and Exporting Data {.scrollable}
+
+-   In `R`, we can import data formats like ASCII, Excel, CSV and many more
+
+-   Files with extensions
+
+    -   `.txt` (files in text fomrat),
+    -   `.csv` (files in comma seperated values) and
+    -   `.xlxs` (files in excel formate)
+
+-   Lets learn one by one
+
+-   Note: For more about file extensions (.txt, .csv, .xlxs) please [GOOGLE](https://www.google.co.in/)
+
+-   Two most commonly used methods for importing data
+
+. . .
+
+```{r, echo=TRUE, eval=FALSE}
+read.csv("path/filename.csv")
+read.table("path/filename.txt")
+# YOU can assign name to the imported data sets
+data <- read.csv("path/filename.csv")
+data1 <- read.table("path/filename.txt")
+# Here data and data1 is the assigned names to the imported data sets
+```
+
+## importing data using `read.table` function {.scrollable}
+
+-   Arguments for the `read.table`
+
+    -   `header = TRUE` read first line as column names
+
+    -   `dec = ","` comma as decimal mark
+
+    -   `sep = "_"` underscore as column separator ("\t" for tabstop)
+
+    -   `fill = T` fill incomplete rows with NAs at the end
+
+    -   `skip = 12` ignore the first 12 lines (eg with meta data)
+
+## importing data using `read.table` function {.scrollable}
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# First let's get help
+?help(read.table)
+?read.table
+# Above these functions will help you to get the details about importing files using read.table
+```
+:::
+
+-   Let's import/read the data file named `example.txt`
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# importing text file
+mydata1 <- read.table("example.txt", header=TRUE, sep="\t")
+```
+:::
+
+## Importing data using `read.csv`{.scrollable}
+
+-   `read.csv` is used to import data file with `.csv` extension that is a file in which data is stored with `comma sepearted value`
+
+-   Let's take an example
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# First let's get help
+?help(read.csv)
+?read.csv
+# Above these functions will help you to get the details about importing the .csv files
+```
+:::
+
+-   Let's import/read the data file named `example.csv`
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# First let's get help
+mydata <- read.csv("example.csv")
+```
+:::
+
+## Importing data- Move away from PATH DEPENDENCY {.scrollable}
+
+-   In the above two methods, we have to give path of the data file stored/kept
+
+-   Instead, we can use `file.choose()` function
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# Importing csv file
+mydata2 <- read.csv(file.choose(),header = T)
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# importing text file
+mydat3 <- read.table(file.choose(),header = T,sep=",")
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# importing tab delimited file
+mydata4 <- read.table(file.choose(),header = T,sep = "\t")
+```
+:::
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# another way to import tab delimited file
+mydata5 <- read.delim(file.choose(),header = T,sep = "\t")
+```
+:::
+
+## Writing/Exporting Data to a file {.scrollable}
+
+-   Setup a directory if not done using command `setwd()`
+
+-   or know your directory using command `getwd()`
+
+-   If `Rproject` is being used no need of setting working directory
+
+-   In R, we can write data frames easily to a file, using the `write.table()` command.
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# another way to import tab delimited file
+write.table(name, file="name.txt", quote=F)
+```
+:::
+
+-   First argument refers to the data frame to be written to the output file
+
+-   the second is the name of the output file.
+
+-   By default R will surround each entry in the output file by quotes, so we use `quote=F`.
+
+-   Use the below command, notice the difference
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+# another way to import tab delimited file
+write.table(mydata, file="name1.txt", quote=F,row.names=F )
+```
+:::
+
+## Excel? {.scrollable}
+
+-   Importing data from `Excel` file
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+require(readxl) # package required to import excel file
+
+mydata6 <- read_excel("example.xlsx",sheet = 1)
+```
+:::
+
+-   Exporting data to `Excel` file
+
+::: fragment
+```{r,message=FALSE}
+#| echo: true
+#| eval: FALSE
+#| code-overflow: scroll
+#| code-fold: false
+#| code-summary: "The Code"
+#| output-location: fragment
+
+require(writexl)# package required to export data to an excel file
+
+write_xlsx(mydata, "name1.xlsx")
+```
+:::
+
+## One more method {.scrollable}
+
+. . .
+
+::: {style="text-align: center"}
+![](images/angry.gif)
+:::
+
+. . .
+
+::: {style="text-align: center"}
+![](images/wait.gif)
+:::
+
+<!-- ## New method {background-video="images/dataimport.mp4" background-video-loop="true" background-video-muted="true" width="400" height="300" style="color:black"}  -->
+
+## New method
+
+{{< video images/dataimport.mp4 width="600" height="600" >}}
+
+##  {background-image="images/w1.gif"}
+
+:::: r-fit-text
+::: center
+[**THANKS**]{style="color: red;"}
+:::
+::::

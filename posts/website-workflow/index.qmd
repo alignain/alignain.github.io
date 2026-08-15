@@ -1,0 +1,111 @@
+---
+# title: "One Excel file, R, and Quarto: how this website runs itself"
+# description: "The workflow behind this site — a single spreadsheet drives my CV and every page here, with live data, graceful fallbacks, and free hosting on GitHub Pages."
+# date: 2026-07-10
+# categories: [quarto, R, workflow, meta]
+---
+
+<!-- Academic websites tend to die of neglect. You build one in a burst of -->
+<!-- enthusiasm, and two years later the "Publications" page is missing your -->
+<!-- last five papers because updating it means editing HTML in six places. -->
+<!-- This site is my attempt to make neglect impossible — by making the update -->
+<!-- cost exactly one row in one spreadsheet. -->
+
+<!-- ## The one-file rule -->
+
+<!-- Everything you see here — the publications list, the teaching table, my -->
+<!-- Ph.D. students, awards, workshops, even the little citation badges — comes -->
+<!-- from a single Excel workbook, `cv_data.xlsx`. The same file also builds my -->
+<!-- PDF CV (a separate Quarto project that renders to LaTeX). When I publish a -->
+<!-- new paper, I add one row to the `publications` sheet, hit render, and both -->
+<!-- the CV and the website update themselves. -->
+
+<!-- The machinery is deliberately boring: -->
+
+<!-- - **Quarto** renders `.qmd` pages to a static website. -->
+<!-- - **R** reads the Excel file at render time. Every page contains almost no -->
+<!--   code — just calls like `print_publications()` or `print_teaching()`. -->
+<!-- - **`helpers.R`** holds all of those functions in one place. If I want to -->
+<!--   change how a publication entry looks, I edit one function, once. -->
+
+<!-- ```r -->
+<!-- # research.qmd, in its entirety (almost) -->
+<!-- print_scholar_stats() -->
+<!-- print_publications() -->
+<!-- print_projects() -->
+<!-- print_presentations() -->
+<!-- ``` -->
+
+<!-- ## Live data, with a safety net -->
+
+<!-- Two things on this site fetch fresh data at render time. -->
+
+<!-- The **Data Corner** on the homepage pulls India's inflation and GDP growth -->
+<!-- from the World Bank API and caches the result, so an offline render still -->
+<!-- works. -->
+
+<!-- The **citation badges** are trickier, because Google Scholar has no API -->
+<!-- and actively blocks scripts. So the badges resolve through a chain: try -->
+<!-- scraping my Scholar profile live; if Google objects (it usually does), -->
+<!-- use the cached result of the last successful scrape; failing that, use -->
+<!-- figures I keep in the spreadsheet; and as a final tier, query -->
+<!-- [OpenAlex](https://openalex.org) — a genuinely open scholarly database -->
+<!-- with a free API that never blocks anyone. Four tiers so that the page -->
+<!-- never shows an embarrassing `NA`. -->
+
+<!-- The lesson generalises: **any live data source on a personal website needs -->
+<!-- a fallback**, because your site will outlive the goodwill of whatever it -->
+<!-- scrapes. -->
+
+<!-- ## The animated background -->
+
+<!-- The homepage background is a single HTML canvas drawing four layers: a -->
+<!-- drifting network whose nodes are economic variables (π, y, i, ε…), floating -->
+<!-- equations from the models I work with, small impulse-response panels that -->
+<!-- sketch themselves and fade away, and — my favourite — a slowly rotating -->
+<!-- **3-D time-varying impulse response surface**, with horizon on one axis, -->
+<!-- time on the other, and the response size as height and colour. If you have -->
+<!-- ever estimated a TVP-VAR, you have stared at exactly that ridge. -->
+
+<!-- It is ~400 lines of dependency-free JavaScript with a settings block at -->
+<!-- the top, and it politely disables itself for visitors who prefer reduced -->
+<!-- motion. -->
+
+<!-- ## Hosting: free and automatic -->
+
+<!-- The site lives in a GitHub repository and deploys to **GitHub Pages**. A -->
+<!-- GitHub Action re-renders everything in the cloud on every push: it -->
+<!-- installs R and the handful of packages, runs Quarto, and publishes the -->
+<!-- result. My entire deployment process is: -->
+
+<!-- ```bash -->
+<!-- git add . -->
+<!-- git commit -m "New paper" -->
+<!-- git push -->
+<!-- ``` -->
+
+<!-- Two minutes later the site is live. No server, no subscription, no -->
+<!-- maintenance. -->
+
+<!-- ## Two hard-won warnings -->
+
+<!-- **Don't keep a Quarto project inside a Google Drive folder.** Drive's sync -->
+<!-- client locks the output directory mid-render and you get cryptic -->
+<!-- `PermissionDenied` errors and ghost folders that refuse to be deleted. -->
+<!-- I moved the project out; peace followed. -->
+
+<!-- **Don't trust a scrape that "succeeds".** When Scholar serves its CAPTCHA -->
+<!-- page, the HTTP request returns 200 and the HTML parses fine — it just -->
+<!-- contains no data. My first version printed `NA` into the CV because the -->
+<!-- error handler never fired. Validate the *content*, not the status code. -->
+
+<!-- ## Was it worth it? -->
+
+<!-- The honest cost was a few afternoons of setup. The payoff is that the -->
+<!-- marginal cost of staying current is now one spreadsheet row. For an -->
+<!-- academic website, that is the whole game: the best system is the one you -->
+<!-- will actually keep feeding. -->
+
+<!-- *The full maintenance guide for this site (rendering, customisation, -->
+<!-- hosting) lives in the repository, and the source is a good starting point -->
+<!-- if you want to build something similar.* -->

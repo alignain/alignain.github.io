@@ -1,0 +1,134 @@
+project:
+  type: website
+  output-dir: _site
+  pre-render: R/pre-render.R
+  # Adds the GoatCounter tag to every published page, including the ones
+  # Quarto only copies (lecture decks, tracker, splicer app) and so never
+  # applies include-in-header to. See R/post-render.R.
+  post-render: R/post-render.R
+  render:
+    - "*.qmd"
+    - "!cv/"
+    - "!cvnain/"
+    # inflation-tracker.qmd pulls live MoSPI data — render it manually
+    # inside software/ and publish the self-contained HTML instead
+    - "!software/"
+    # Rclass_2025 is a self-contained slide deck that was already rendered
+    # in its own RStudio project. Quarto must NOT re-render those .qmd/.Rmd
+    # files — it only copies the finished HTML across (see resources below).
+    - "!Rclass_2025/"
+  resources:
+    - background.js
+    # Estimated IRF surface the animation draws. Generated from the TVP-BVAR
+    # MCMC output — see the header inside the file.
+    - irf-surface.js
+    - cv.pdf
+    - software/app.R
+    - software/example_data.csv
+    - software/splicer-app/**
+    # Course materials for ECM2073, served at /Rclass_2025/ and linked
+    # from courses/rclass-2025.qmd
+    - Rclass_2025/**
+    - "!Rclass_2025/_site/**"      # duplicate copy of the same deck (247 MB)
+    - "!Rclass_2025/*.Rproj"
+    - "!Rclass_2025/.Rhistory"
+    - "!cv/**"
+    - "!cvnain/**"
+    - "!data/**"
+    - "!R/**"
+    - "!guide/**"
+    # Inflation tracker: rendered by hand inside software/ (see the guide),
+    # published here as finished output. tracker.css and the _files folder
+    # are both referenced by the HTML — publishing the page without them
+    # gives an unstyled article with six missing charts.
+    - software/inflation-tracker.html
+    - software/inflation-tracker_files/**
+    - software/tracker.css
+    - software/tracker_status.json
+    - "!software/data_cache/**"
+    - "!software/README.md"
+    - "!software/build-shinylive.R"
+
+website:
+  title: "Md Zulquar Nain"
+  description: "Md Zulquar Nain — Assistant Professor of Economics, Aligarh Muslim University"
+  favicon: images/amu-logo.png
+  # Root URL of the published site. Needed for correct absolute links in the
+  # sitemap and the blog's RSS feed. This is the user-site form (repo named
+  # alignain.github.io); a project repo would be
+  # https://alignain.github.io/reponame/ instead.
+  site-url: https://alignain.github.io/
+  # Visitor analytics: GoatCounter (dashboard at https://alignain.goatcounter.com)
+  # — tracking script is added in format > html > include-in-header below.
+  navbar:
+    background: "#1d2937"   # deep navy-slate; try "#4e8d7e" for teal
+    foreground: "#ffffff"   # white text and icons
+    pinned: true
+    logo: images/amu-logo.png
+    logo-alt: "Aligarh Muslim University"
+    logo-href: https://amu.ac.in
+    left:
+      - text: Home
+        href: index.qmd
+      - text: Research
+        href: research.qmd
+      - text: Software
+        href: software.qmd
+      - text: Teaching
+        href: teaching.qmd
+      - text: Blog
+        href: blog.qmd
+      - text: CV
+        href: cv.qmd
+    right:
+      - icon: mortarboard-fill
+        href: https://scholar.google.co.in/citations?user=7Db2EHMAAAAJ&hl=en
+        aria-label: Google Scholar
+      - icon: globe
+        href: https://amu.ac.in/faculty/economics/md-zulquar-nain
+        aria-label: AMU faculty page
+      - icon: envelope
+        href: mailto:zulquar.ec@amu.ac.in
+        aria-label: Email
+  page-footer:
+    center: "© 2026 Md Zulquar Nain · Built with [Quarto](https://quarto.org)"
+    # Raw <img>, not markdown `![alt](url)`: the markdown form makes Quarto wrap
+    # it in a <figure> and print the alt text as a visible caption, which showed
+    # the words "visitor count" underneath a badge that already reads "Views for
+    # this site". The alt attribute keeps that text for screen readers only.
+    # Greyed down in styles.css (.visitor-badge) — the SVG hard-codes purple.
+    right: '<img class="visitor-badge" src="https://alignain.goatcounter.com/counter/TOTAL.svg?no_branding=1" alt="Visitor count">'
+
+execute:
+  echo: false
+  warning: false
+  message: false
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: false
+    link-external-newwindow: true
+    include-in-header:
+      text: |
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <script data-goatcounter="https://alignain.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+    include-after-body:
+      text: |
+        <script>
+        // Open ALL external links (navbar icons, hero socials, etc.)
+        // in a new tab instead of replacing the site.
+        document.addEventListener("DOMContentLoaded", function () {
+          document.querySelectorAll("a[href^='http']").forEach(function (a) {
+            try {
+              if (new URL(a.href).origin !== location.origin) {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener");
+              }
+            } catch (e) {}
+          });
+        });
+        </script>

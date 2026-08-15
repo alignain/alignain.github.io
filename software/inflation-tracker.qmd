@@ -1,0 +1,852 @@
+---
+title: "India Inflation Tracker"
+subtitle: "Retail inflation (CPI) pulled live from MoSPI's open API — trend, sectors, spending divisions, and contributions to the headline rate"
+date: today
+format:
+  html:
+    # NOT self-contained on purpose. embed-resources inlines DataTables,
+    # ggiraph and every image into one ~11 MB file, and a fresh 11 MB blob
+    # lands in git history at each monthly re-render. Split out, the JS
+    # libraries in inflation-tracker_files/ stay byte-identical month to
+    # month and git stores them once; only the charts churn.
+    embed-resources: false
+    toc: true
+    toc-depth: 2
+    toc-title: "On this page"
+    fig-width: 9
+    fig-height: 4.6
+    css: tracker.css
+    link-external-newwindow: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(lubridate)
+  library(httr2)
+  library(jsonlite)
+  library(stringr)
+  library(forcats)
+  library(scales)
+})
+if (requireNamespace("ragg", quietly = TRUE)) knitr::opts_chunk$set(dev = "ragg_png")
+
+# ---- palette (validated reference palette; see notes) -----------------------
+PAL <- list(
+  surface = "#fcfcfb", ink = "#0b0b0b", ink2 = "#52514e", muted = "#898781",
+  grid = "#e1e0d9", axis = "#c3c2b7", band = "#f0efec",
+  blue = "#2a78d6", aqua = "#1baf7a", yellow = "#eda100", green = "#008300",
+  violet = "#4a3aa7", red = "#e34948", magenta = "#e87ba4", orange = "#eb6834",
+  down_good = "#006300", up_bad = "#d03b3b"
+)
+
+theme_tracker <- function(base_size = 12.5) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      plot.background = element_rect(fill = PAL$surface, colour = NA),
+      panel.background = element_rect(fill = PAL$surface, colour = NA),
+      panel.grid.major.y = element_line(colour = PAL$grid, linewidth = 0.35),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line.x = element_line(colour = PAL$axis, linewidth = 0.4),
+      axis.ticks = element_blank(),
+      axis.text = element_text(colour = PAL$muted, size = rel(0.85)),
+      axis.title = element_text(colour = PAL$ink2, size = rel(0.85)),
+      plot.title = element_text(colour = PAL$ink, face = "bold", size = rel(1.12)),
+      plot.subtitle = element_text(colour = PAL$ink2, size = rel(0.88), margin = margin(b = 10)),
+      plot.caption = element_text(colour = PAL$muted, size = rel(0.72), hjust = 0, margin = margin(t = 10)),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      legend.position = "top",
+      legend.justification = "left",
+      legend.title = element_blank(),
+      legend.text = element_text(colour = PAL$ink2, size = rel(0.85)),
+      strip.text = element_text(colour = PAL$ink2, face = "bold", size = rel(0.88)),
+      plot.margin = margin(8, 16, 8, 8)
+    )
+}
+
+pct1 <- function(x) ifelse(is.na(x), "—", sprintf("%.1f%%", x))
+pp1  <- function(x) ifelse(is.na(x), "—", sprintf("%+.1f pp", x))
+
+# ---- MoSPI API client -------------------------------------------------------
+MOSPI_BASE <- "https://api.mospi.gov.in"
+CACHE_DIR  <- "data_cache"
+dir.create(CACHE_DIR, showWarnings = FALSE)
+
+mospi_get <- function(endpoint, params, limit = 100, max_pages = 250) {
+  pages <- list()
+  page  <- 1L
+  repeat {
+    resp <- request(MOSPI_BASE) |>
+      req_url_path(endpoint) |>
+      req_url_query(!!!params, Format = "JSON", limit = limit, page = page) |>
+      req_user_agent("india-inflation-tracker (R/httr2)") |>
+      req_timeout(120) |>
+      req_retry(max_tries = 3, backoff = ~2) |>
+      req_perform()
+    dat <- fromJSON(resp_body_string(resp))$data
+    if (is.null(dat) || NROW(dat) == 0) break
+    pages[[page]] <- as_tibble(dat)
+    if (NROW(dat) < limit) break
+    page <- page + 1L
+    if (page > max_pages) break
+  }
+  bind_rows(pages)
+}
+
+# Fetch with a local cache. On API failure a stale cache is used silently;
+# a missing cache plus a failed fetch returns an empty tibble.
+cached_fetch <- function(file, max_age_hours, fetch_fn) {
+  path <- file.path(CACHE_DIR, file)
+  if (file.exists(path)) {
+    age_h <- as.numeric(difftime(Sys.time(), file.mtime(path), units = "hours"))
+    if (age_h < max_age_hours) return(readRDS(path))
+  }
+  fresh <- tryCatch(fetch_fn(), error = function(e) NULL)
+  if (!is.null(fresh) && NROW(fresh) > 0) {
+    saveRDS(fresh, path)
+    return(fresh)
+  }
+  if (file.exists(path)) readRDS(path) else tibble()
+}
+
+month_date <- function(year, month_name) {
+  as.Date(sprintf("%s-%02d-01", year, match(month_name, month.name)))
+}
+```
+
+```{r fetch}
+#| cache: false
+this_year <- year(Sys.Date())
+
+# Old series, base 2012 = 100 (Jan 2013 - Dec 2025, discontinued). Refreshed monthly
+# in case of revisions; delete data_cache/ to force a full re-download.
+d12_raw <- cached_fetch(
+  "cpi_base2012_allindia.rds", max_age_hours = 24 * 30,
+  function() mospi_get(
+    "/api/cpi/getCPIIndex",
+    params = list(base_year = "2012", series = "Current", state_code = "99"),
+    limit = 2000
+  )
+)
+
+# New series, base 2024 = 100 (2025 onwards). Combined sector, full division
+# hierarchy, one cache file per year; the current year expires after 12 hours.
+d24_raw <- bind_rows(lapply(2025:this_year, function(y) {
+  cached_fetch(
+    sprintf("cpi_base2024_combined_%d.rds", y),
+    max_age_hours = if (y < this_year) 24 * 30 else 12,
+    function() mospi_get(
+      "/api/cpi/getCPIData",
+      params = list(base_year = "2024", series = "Current",
+                    state_code = "1", sector_code = "3", year = y),
+      limit = 100
+    )
+  )
+}))
+
+# New series, headline (division 0) only, for all three sectors.
+d24_gen_raw <- bind_rows(lapply(2025:this_year, function(y) {
+  cached_fetch(
+    sprintf("cpi_base2024_general_%d.rds", y),
+    max_age_hours = if (y < this_year) 24 * 30 else 12,
+    function() mospi_get(
+      "/api/cpi/getCPIData",
+      params = list(base_year = "2024", series = "Current",
+                    state_code = "1", division_code = "0", year = y),
+      limit = 100
+    )
+  )
+}))
+
+# New series, headline (division 0) by state/UT, Combined sector. Omitting
+# state_code returns every state plus All India. Optional: the map section
+# is skipped gracefully if this comes back empty.
+dst_raw <- bind_rows(lapply(2025:this_year, function(y) {
+  cached_fetch(
+    sprintf("cpi_base2024_states_%d.rds", y),
+    max_age_hours = if (y < this_year) 24 * 30 else 12,
+    function() mospi_get(
+      "/api/cpi/getCPIData",
+      params = list(base_year = "2024", series = "Current",
+                    sector_code = "3", division_code = "0", year = y),
+      limit = 100
+    )
+  )
+}))
+
+if (NROW(d12_raw) == 0 || NROW(d24_raw) == 0 || NROW(d24_gen_raw) == 0) {
+  stop(paste(
+    "Could not reach the MoSPI API (api.mospi.gov.in) and no local cache exists yet.",
+    "Check the connection and re-render; the first successful render caches everything."
+  ))
+}
+```
+
+```{r wrangle}
+# ---- official weighting diagrams (MoSPI press release, 12 Feb 2026) ---------
+divisions <- tribble(
+  ~division,                                                                 ~short,               ~weight,
+  "Food and beverages",                                                      "Food & beverages",     36.753,
+  "Housing, water, electricity, gas and other fuels",                        "Housing & utilities",  17.665,
+  "Transport",                                                               "Transport",             8.796,
+  "Clothing and footwear",                                                   "Clothing & footwear",   6.383,
+  "Health",                                                                  "Health",                6.100,
+  "Personal care, social protection and miscellaneous goods and services",   "Personal care & misc",  5.038,
+  "Furnishings, household equipment and routine household maintenance",      "Household goods",       4.469,
+  "Information and communication",                                           "Info & communication",  3.609,
+  "Restaurants and accommodation services",                                  "Restaurants & hotels",  3.348,
+  "Education services",                                                      "Education",             3.333,
+  "Paan, tobacco and intoxicants",                                           "Paan & tobacco",        2.989,
+  "Recreation, sport and culture",                                           "Recreation & culture",  1.516
+)
+
+# ---- old series (2012 base): group-level, All India -------------------------
+d12 <- d12_raw |>
+  mutate(
+    date = month_date(year, month),
+    index = suppressWarnings(as.numeric(index)),
+    yoy = suppressWarnings(as.numeric(inflation))
+  ) |>
+  filter(!is.na(date))
+
+d12_group <- d12 |>
+  filter(is.na(subgroup) | subgroup == "" | subgroup == group |
+           str_ends(subgroup, "-Overall"))
+
+headline12 <- d12_group |>
+  filter(group == "General", sector == "Combined", !is.na(yoy)) |>
+  distinct(date, .keep_all = TRUE) |>
+  arrange(date)
+
+# ---- new series (2024 base): division-level, All India ----------------------
+d24 <- d24_raw |>
+  mutate(
+    date = month_date(year, month),
+    index = suppressWarnings(as.numeric(index)),
+    yoy = suppressWarnings(as.numeric(inflation))
+  ) |>
+  filter(!is.na(date))
+
+d24_div <- d24 |>
+  filter(is.na(group), is.na(item)) |>            # division-level rows only
+  distinct(date, sector, division, .keep_all = TRUE)
+
+d24_grp <- d24 |>
+  filter(!is.na(group), is.na(`class`), is.na(item)) |>   # 43 COICOP groups
+  distinct(date, sector, division, group, .keep_all = TRUE)
+
+headline24 <- d24_gen_raw |>
+  mutate(
+    date = month_date(year, month),
+    index = suppressWarnings(as.numeric(index)),
+    yoy = suppressWarnings(as.numeric(inflation))
+  ) |>
+  filter(division == "CPI (General)", !is.na(date)) |>
+  distinct(date, sector, .keep_all = TRUE)
+
+# ---- chained headline: 2012 base through Dec 2025, 2024 base from Jan 2026 --
+SWITCH_DATE <- as.Date("2026-01-01")
+
+headline <- bind_rows(
+  headline12 |> filter(date < SWITCH_DATE) |>
+    transmute(date, yoy, base = "2012 = 100"),
+  headline24 |> filter(sector == "Combined", date >= SWITCH_DATE, !is.na(yoy)) |>
+    transmute(date, yoy, base = "2024 = 100")
+) |> arrange(date)
+
+latest_date  <- max(headline$date)
+latest_month <- format(latest_date, "%B %Y")
+latest       <- headline |> filter(date == latest_date)
+prev         <- headline |> filter(date == latest_date %m-% months(1))
+
+# month-on-month, computed within the continuous 2024-base index
+mom_series <- headline24 |>
+  filter(sector == "Combined") |>
+  arrange(date) |>
+  mutate(mom = 100 * (index / lag(index) - 1))
+latest_mom <- mom_series |> filter(date == latest_date) |> pull(mom)
+
+latest_div <- d24_div |>
+  filter(sector == "Combined", date == latest_date, division != "CPI (General)") |>
+  inner_join(divisions, by = "division")
+
+food_yoy <- latest_div |> filter(short == "Food & beverages") |> pull(yoy)
+food_prev <- d24_div |>
+  filter(sector == "Combined", date == latest_date %m-% months(1),
+         division == "Food and beverages") |> pull(yoy)
+
+# ---- state-level headline: latest month available in the state data ---------
+dstate <- dst_raw |>
+  mutate(
+    date = month_date(year, month),
+    yoy = suppressWarnings(as.numeric(inflation))
+  ) |>
+  filter(state != "All India", division == "CPI (General)",
+         !is.na(date), !is.na(yoy)) |>
+  distinct(date, state, .keep_all = TRUE)
+
+state_date <- if (NROW(dstate) > 0) max(dstate$date) else as.Date(NA)
+
+# colour scale shared by the division heatmap and the state map:
+# saturates 6 pp either side of the 4% target
+HEAT_SPAN <- 6
+
+sect_latest <- headline24 |> filter(date == latest_date) |> select(sector, yoy)
+rural_yoy <- sect_latest |> filter(sector == "Rural") |> pull(yoy)
+urban_yoy <- sect_latest |> filter(sector == "Urban") |> pull(yoy)
+
+# ---- contribution of each division to headline YoY --------------------------
+# index a year ago is recovered from the published YoY rate, so contributions
+# use only official numbers: contrib_g = w_g * (I_t - I_t-12) / sum(w * I_t-12)
+contrib <- d24_div |>
+  filter(sector == "Combined", division != "CPI (General)", !is.na(yoy)) |>
+  inner_join(divisions, by = "division") |>
+  mutate(idx_prev = index / (1 + yoy / 100)) |>
+  group_by(date) |>
+  mutate(contrib = weight * (index - idx_prev) / sum(weight * idx_prev) * 100) |>
+  ungroup()
+
+contrib_latest <- contrib |> filter(date == latest_date)
+
+# ---- status file ------------------------------------------------------------
+# Written on every render and read by two other things: print_software() in
+# R/helpers.R stamps "Data through ..." on the Software page card, and the
+# check-inflation-data GitHub Action compares latest_month against what MoSPI
+# is publishing and opens an issue when this page falls behind. Keep the
+# field names in step with both if you change them.
+writeLines(
+  jsonlite::toJSON(
+    list(
+      latest_month = format(latest_date, "%Y-%m"),
+      latest_label = format(latest_date, "%b %Y"),
+      headline_yoy = round(latest$yoy, 2),
+      rendered     = format(Sys.Date())
+    ),
+    auto_unbox = TRUE, pretty = TRUE
+  ),
+  "tracker_status.json"
+)
+```
+
+```{r kpis, results='asis'}
+delta_html <- function(delta, unit = "pp") {
+  if (length(delta) == 0 || is.na(delta)) return("")
+  cls <- if (delta <= 0) "kpi-delta down" else "kpi-delta up"
+  arw <- if (delta <= 0) "&#9660;" else "&#9650;"
+  sprintf('<span class="%s">%s %+.2f %s vs prior month</span>', cls, arw, delta, unit)
+}
+tile <- function(label, value, sub) {
+  sprintf('<div class="kpi"><div class="kpi-label">%s</div><div class="kpi-value">%s</div>%s</div>',
+          label, value, sub)
+}
+cat(
+  '<div class="kpi-grid">',
+  tile("Headline inflation (y/y)", pct1(latest$yoy),
+       delta_html(latest$yoy - prev$yoy)),
+  tile("Food &amp; beverages (y/y)", pct1(food_yoy),
+       delta_html(food_yoy - food_prev)),
+  tile("Headline, month-on-month", pct1(latest_mom),
+       sprintf('<span class="kpi-sub">seasonally unadjusted</span>')),
+  tile("Rural &nbsp;|&nbsp; Urban (y/y)",
+       paste0(pct1(rural_yoy), " | ", pct1(urban_yoy)),
+       sprintf('<span class="kpi-sub">gap %s</span>', pp1(rural_yoy - urban_yoy))),
+  '</div>',
+  sprintf('<p class="kpi-note">Latest data: <strong>%s</strong>, All-India CPI, base 2024&nbsp;=&nbsp;100 · fetched %s from api.mospi.gov.in</p>',
+          latest_month, format(Sys.time(), "%d %b %Y %H:%M")),
+  sep = "\n"
+)
+```
+
+## Headline trend
+
+Consumer price inflation in `r latest_month` was **`r pct1(latest$yoy)`** year on year.
+The chart chains the discontinued 2012-base series (through December 2025) with the
+new 2024-base series that MoSPI introduced in February 2026; the dotted marker shows
+the switch. The shaded band is the RBI's flexible inflation-targeting range of
+4% ± 2 percentage points.
+
+```{r fig-trend}
+#| fig-height: 4.8
+#| fig-alt: "Line chart of India headline CPI inflation, year on year, from 2014 to the latest month, with the RBI 2 to 6 percent tolerance band shaded and the 4 percent target marked."
+trend <- headline |> filter(date >= as.Date("2014-01-01"))
+
+ggplot(trend, aes(date, yoy)) +
+  annotate("rect", xmin = min(trend$date), xmax = max(trend$date) %m+% months(4),
+           ymin = 2, ymax = 6, fill = PAL$band) +
+  geom_hline(yintercept = 4, colour = PAL$muted, linetype = "42", linewidth = 0.4) +
+  geom_vline(xintercept = SWITCH_DATE, colour = PAL$muted, linetype = "13", linewidth = 0.45) +
+  geom_line(colour = PAL$blue, linewidth = 0.85) +
+  geom_point(data = slice_tail(trend, n = 1), colour = PAL$blue, size = 2.4) +
+  geom_text(data = slice_tail(trend, n = 1),
+            aes(label = sprintf("%.1f%%", yoy)),
+            hjust = -0.35, vjust = 0.5, colour = PAL$ink, fontface = "bold", size = 3.4) +
+  annotate("text", x = SWITCH_DATE, y = max(trend$yoy, na.rm = TRUE),
+           label = "new 2024 = 100 series", hjust = 1.05, vjust = 1,
+           colour = PAL$muted, size = 3) +
+  annotate("text", x = min(trend$date), y = 6, label = "RBI tolerance band 2–6%",
+           hjust = -0.02, vjust = -0.6, colour = PAL$muted, size = 3) +
+  scale_x_date(breaks = seq(as.Date("2014-01-01"), max(trend$date), by = "2 years"),
+               date_labels = "%Y",
+               expand = expansion(mult = c(0.01, 0.06))) +
+  scale_y_continuous(labels = label_number(suffix = "%")) +
+  labs(
+    title = "Headline retail inflation, year on year",
+    subtitle = "All-India CPI (Combined) · 2012-base series to Dec 2025, 2024-base series from Jan 2026",
+    x = NULL, y = NULL,
+    caption = "Source: MoSPI CPI API (api.mospi.gov.in). YoY rates as published by MoSPI for each base series."
+  ) +
+  theme_tracker()
+```
+
+## Rural vs urban
+
+```{r fig-sector}
+#| fig-height: 4.4
+#| fig-alt: "Line chart comparing rural and urban year-on-year CPI inflation over the last four years, with direct labels on the latest values."
+sect <- bind_rows(
+  d12_group |>
+    filter(group == "General", sector %in% c("Rural", "Urban"),
+           date < SWITCH_DATE, !is.na(yoy)) |>
+    select(date, sector, yoy),
+  headline24 |>
+    filter(sector %in% c("Rural", "Urban"), date >= SWITCH_DATE, !is.na(yoy)) |>
+    select(date, sector, yoy)
+) |>
+  filter(date >= latest_date %m-% years(4)) |>
+  arrange(date)
+
+sect_cols <- c(Rural = PAL$blue, Urban = PAL$aqua)
+sect_ends <- sect |> group_by(sector) |> slice_max(date, n = 1) |> ungroup()
+
+ggplot(sect, aes(date, yoy, colour = sector)) +
+  geom_hline(yintercept = 0, colour = PAL$axis, linewidth = 0.4) +
+  geom_vline(xintercept = SWITCH_DATE, colour = PAL$muted, linetype = "13", linewidth = 0.45) +
+  geom_line(linewidth = 0.85) +
+  geom_point(data = sect_ends, size = 2.2) +
+  geom_text(data = sect_ends,
+            aes(label = sprintf("%s %.1f%%", sector, yoy)),
+            hjust = -0.12, vjust = 0.5, size = 3.3, fontface = "bold", show.legend = FALSE) +
+  scale_colour_manual(values = sect_cols) +
+  scale_x_date(breaks = seq(ceiling_date(min(sect$date), "year"), max(sect$date), by = "1 year"),
+               date_labels = "%Y",
+               expand = expansion(mult = c(0.01, 0.20))) +
+  scale_y_continuous(labels = label_number(suffix = "%")) +
+  labs(
+    title = "Rural and urban inflation, year on year",
+    subtitle = "All-India CPI (General) by sector · last four years",
+    x = NULL, y = NULL,
+    caption = "Source: MoSPI CPI API. Rural housing enters the index only from the 2024-base series."
+  ) +
+  theme_tracker()
+```
+
+## Inflation across states
+
+How the latest headline rate varies across states and union territories —
+hover over a state to see its name and rate. Colours use the same scale as
+the division heatmap below: white at the 4% target, red above, blue below.
+Union territories too small to see at this scale — Delhi, Chandigarh,
+Puducherry, Dadra & Nagar Haveli and Daman & Diu, and Lakshadweep — are
+marked with dots.
+
+```{r fig-statemap}
+# Boundaries as published by the Government of India (Survey of India view:
+# Jammu & Kashmir and Ladakh shown in full). District file dissolved to
+# state level once, then cached alongside the API pulls.
+GEO_URLS <- c(
+  "https://raw.githubusercontent.com/udit-001/india-maps-data/main/geojson/india.geojson",
+  "https://cdn.jsdelivr.net/gh/udit-001/india-maps-data@main/geojson/india.geojson"
+)
+
+india_sf <- local({
+  path <- file.path(CACHE_DIR, "india_states_sf.rds")
+  if (file.exists(path)) return(readRDS(path))
+  g <- NULL
+  for (u in GEO_URLS) {
+    g <- tryCatch(sf::st_read(u, quiet = TRUE), error = function(e) NULL)
+    if (!is.null(g)) break
+  }
+  if (is.null(g)) return(NULL)
+  g <- g |> group_by(st_nm) |> summarise(.groups = "drop")
+  saveRDS(g, path)
+  g
+})
+
+# harmonise MoSPI state names with the map's ("NCT of Delhi" -> "Delhi",
+# "The Dadra And ..." -> "Dadra and ...", "&" vs "and", casing)
+norm_state <- function(x) {
+  x <- str_to_lower(x)
+  x <- str_replace_all(x, "&", "and")
+  x <- str_remove(x, "^the ")
+  x <- str_remove(x, "^nct of ")
+  str_squish(x)
+}
+
+if (!is.null(india_sf) && NROW(dstate) > 0) {
+  # ggiraph's sf geom is incompatible with ggplot2 4.x, so project to an
+  # India-centric CRS, simplify on the plane (lighter SVG, type-stable),
+  # and draw plain interactive polygons from the flattened coordinates.
+  # (sf must act on the object before any dplyr verb so that its
+  # data-frame methods are registered when the cache skips st_read.)
+  smap_proj <- india_sf |>
+    sf::st_transform(7755) |>
+    sf::st_simplify(dTolerance = 2000, preserveTopology = TRUE) |>
+    sf::st_cast("MULTIPOLYGON") |>
+    mutate(key = norm_state(st_nm)) |>
+    left_join(
+      dstate |> filter(date == state_date) |>
+        transmute(key = norm_state(state), yoy),
+      by = "key"
+    ) |>
+    mutate(tip = ifelse(is.na(yoy),
+                        sprintf("%s — no data", st_nm),
+                        sprintf("%s — %.1f%% y/y", st_nm, yoy)))
+
+  poly_df <- as_tibble(sf::st_coordinates(smap_proj)) |>
+    transmute(x = X, y = Y, feat = L3,
+              poly = paste(L3, L2, sep = "."),
+              ring = interaction(L3, L2, L1)) |>
+    left_join(
+      smap_proj |> sf::st_drop_geometry() |>
+        mutate(feat = row_number()) |>
+        select(feat, st_nm, yoy, tip),
+      by = "feat"
+    )
+
+  # print the rate on states large enough to hold a label
+  lab_pts <- smap_proj |>
+    filter(!is.na(yoy)) |>
+    mutate(area_km2 = as.numeric(sf::st_area(geometry)) / 1e6) |>
+    filter(area_km2 > 15000) |>
+    sf::st_point_on_surface()
+  lab_df <- bind_cols(
+    lab_pts |> sf::st_drop_geometry() |> select(yoy),
+    as_tibble(sf::st_coordinates(lab_pts))
+  )
+
+  # UTs only a few pixels wide at this scale (Delhi, Chandigarh, Puducherry,
+  # DNH & Daman and Diu, Lakshadweep) get a hoverable dot so they stay visible
+  small_pts <- smap_proj |>
+    mutate(area_km2 = as.numeric(sf::st_area(geometry)) / 1e6) |>
+    filter(area_km2 < 2000) |>
+    sf::st_point_on_surface()
+  small_df <- bind_cols(
+    small_pts |> sf::st_drop_geometry() |> select(st_nm, yoy, tip),
+    as_tibble(sf::st_coordinates(small_pts))
+  )
+
+  p <- ggplot(poly_df) +
+    ggiraph::geom_polygon_interactive(
+      aes(x, y, group = poly, subgroup = ring, fill = yoy,
+          tooltip = tip, data_id = st_nm),
+      colour = PAL$surface, linewidth = 0.35
+    ) +
+    ggiraph::geom_point_interactive(
+      data = small_df,
+      aes(X, Y, fill = yoy, tooltip = tip, data_id = st_nm),
+      shape = 21, size = 3, colour = PAL$ink2, stroke = 0.5,
+      inherit.aes = FALSE
+    ) +
+    geom_text(data = lab_df,
+              aes(X, Y, label = sprintf("%.1f", yoy),
+                  colour = abs(yoy - 4) > 0.72 * HEAT_SPAN),
+              size = 2.8) +
+    scale_fill_gradient2(low = PAL$blue, mid = PAL$band, high = PAL$red,
+                         midpoint = 4, limits = c(4 - HEAT_SPAN, 4 + HEAT_SPAN),
+                         oob = squish, breaks = c(-2, 0, 2, 4, 6, 8, 10),
+                         na.value = PAL$grid, name = "y/y %") +
+    scale_colour_manual(values = c(`FALSE` = PAL$ink2, `TRUE` = "#ffffff"),
+                        guide = "none") +
+    coord_fixed(expand = FALSE) +
+    labs(
+      title = sprintf("Headline inflation by state, %s", format(state_date, "%B %Y")),
+      subtitle = "Year-on-year % change, CPI (General), Combined · white = at the 4% target, colour capped ±6 pp",
+      x = NULL, y = NULL,
+      caption = "Source: MoSPI CPI API, 2024-base series. Map: boundaries as published by the Government of India\n(Survey of India); state polygons dissolved from the district file of udit-001/india-maps-data."
+    ) +
+    theme_tracker() +
+    theme(panel.grid = element_blank(),
+          axis.line.x = element_blank(),
+          axis.text = element_blank(),
+          legend.key.height = unit(10, "pt"), legend.key.width = unit(28, "pt"))
+
+  ggiraph::girafe(
+    ggobj = p, width_svg = 9, height_svg = 8.4,
+    options = list(
+      ggiraph::opts_hover(css = "stroke:#0b0b0b; stroke-width:1.1px; cursor:pointer;"),
+      ggiraph::opts_tooltip(
+        css = paste0("background:", PAL$ink, "; color:#fff; padding:6px 10px;",
+                     "border-radius:6px; font-size:0.85rem;"),
+        opacity = 0.95
+      ),
+      ggiraph::opts_toolbar(saveaspng = FALSE),
+      ggiraph::opts_sizing(rescale = TRUE, width = 1)
+    )
+  )
+} else {
+  cat("State-level data or the map file could not be fetched on this render;",
+      "the state map will return on the next successful refresh.")
+}
+```
+
+```{r tbl-states, results='asis'}
+if (NROW(dstate) > 0) {
+  st_tbl <- dstate |>
+    filter(date == state_date) |>
+    transmute(`State / UT` = state, `y/y %` = yoy)
+  hi <- st_tbl |> slice_max(`y/y %`, n = 5)
+  lo <- st_tbl |> slice_min(`y/y %`, n = 5) |> arrange(`y/y %`)
+  cat("\n:::: {.movers}\n\n::: {}\n**Highest inflation**\n\n")
+  print(knitr::kable(hi, digits = 1))
+  cat("\n:::\n\n::: {}\n**Lowest inflation**\n\n")
+  print(knitr::kable(lo, digits = 1))
+  cat("\n:::\n\n::::\n")
+}
+```
+
+## Sector-wise inflation
+
+The new CPI classifies spending into twelve COICOP divisions. Bars show the latest
+year-on-year rate for each division; the heatmap tracks how each rate has evolved
+month by month under the new series, coloured by distance from the 4% target.
+
+```{r fig-divbar}
+#| fig-height: 5.4
+#| fig-alt: "Horizontal bar chart of year-on-year inflation by CPI division for the latest month, sorted from highest to lowest, with negative values in red."
+bar <- latest_div |>
+  filter(!is.na(yoy)) |>
+  mutate(short = fct_reorder(factor(short), yoy))
+
+ggplot(bar, aes(yoy, short, fill = yoy < 0)) +
+  geom_vline(xintercept = 0, colour = PAL$axis, linewidth = 0.4) +
+  geom_col(width = 0.62) +
+  geom_text(aes(label = sprintf("%.1f", yoy),
+                hjust = ifelse(yoy < 0, 1.25, -0.25)),
+            colour = PAL$ink2, size = 3.2) +
+  scale_fill_manual(values = c(`FALSE` = PAL$blue, `TRUE` = PAL$red), guide = "none") +
+  scale_x_continuous(labels = label_number(suffix = "%"),
+                     expand = expansion(mult = c(0.08, 0.12))) +
+  labs(
+    title = sprintf("Inflation by division, %s", latest_month),
+    subtitle = "Year-on-year % change, All-India Combined · CPI 2024 = 100",
+    x = NULL, y = NULL,
+    caption = "Source: MoSPI CPI API. Division names abbreviated; full names in the table below."
+  ) +
+  theme_tracker() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(colour = PAL$grid, linewidth = 0.35),
+        axis.line.x = element_blank(),
+        axis.text.y = element_text(colour = PAL$ink2))
+```
+
+```{r fig-heat}
+#| fig-height: 5.2
+#| fig-alt: "Heatmap of year-on-year inflation by CPI division and month under the 2024-base series. Cells are blue below the 4 percent target and red above it, with the rate printed in each cell."
+heat <- d24_div |>
+  filter(sector == "Combined", division != "CPI (General)", !is.na(yoy)) |>
+  inner_join(divisions, by = "division") |>
+  mutate(short = factor(short, levels = rev(divisions$short)),
+         mlab = factor(format(date, "%b %y"),
+                       levels = format(sort(unique(date)), "%b %y")))
+
+ggplot(heat, aes(mlab, short, fill = yoy)) +
+  geom_tile(colour = PAL$surface, linewidth = 1.2) +
+  geom_text(aes(label = sprintf("%.1f", yoy),
+                colour = abs(yoy - 4) > 0.72 * HEAT_SPAN),
+            size = 2.9) +
+  scale_fill_gradient2(low = PAL$blue, mid = PAL$band, high = PAL$red,
+                       midpoint = 4, limits = c(4 - HEAT_SPAN, 4 + HEAT_SPAN),
+                       oob = squish, breaks = c(-2, 0, 2, 4, 6, 8, 10),
+                       name = "y/y %") +
+  scale_colour_manual(values = c(`FALSE` = PAL$ink2, `TRUE` = "#ffffff"), guide = "none") +
+  scale_x_discrete(position = "top") +
+  labs(
+    title = "Division inflation, month by month",
+    subtitle = "Year-on-year % change · divisions ordered by CPI weight · white = at the 4% target, colour capped ±6 pp",
+    x = NULL, y = NULL,
+    caption = "Source: MoSPI CPI API, 2024-base series (published from Jan 2026; back months where available)."
+  ) +
+  theme_tracker() +
+  theme(panel.grid.major.y = element_blank(),
+        axis.line.x = element_blank(),
+        axis.text.y = element_text(colour = PAL$ink2),
+        legend.key.height = unit(10, "pt"), legend.key.width = unit(28, "pt"))
+```
+
+## What is driving headline inflation
+
+Each division's pull on the headline rate is its inflation weighted by its share of
+the consumption basket. Food & beverages carries 36.8% of the basket, so even modest
+food inflation moves the total. Contributions are derived from published division
+indices, published year-on-year rates, and the official weighting diagram.
+
+```{r fig-contrib}
+#| fig-height: 4.8
+#| fig-alt: "Stacked monthly bars of each division's contribution to headline year-on-year inflation in percentage points, for the months of the 2024-base series, with the headline rate marked on each month."
+top5 <- contrib |>
+  group_by(short) |>
+  summarise(m = mean(abs(contrib)), .groups = "drop") |>
+  slice_max(m, n = 5) |>
+  pull(short)
+
+contrib_plot <- contrib |>
+  mutate(grp = ifelse(short %in% top5, short, "All other divisions")) |>
+  group_by(date, grp) |>
+  summarise(contrib = sum(contrib), .groups = "drop") |>
+  mutate(
+    grp = factor(grp, levels = c(
+      divisions$short[divisions$short %in% top5], "All other divisions")),
+    mlab = factor(format(date, "%b %y"),
+                  levels = format(sort(unique(date)), "%b %y"))
+  )
+
+head_pts <- contrib |>
+  group_by(date) |>
+  summarise(total = sum(contrib), .groups = "drop") |>
+  mutate(mlab = factor(format(date, "%b %y"), levels = levels(contrib_plot$mlab)))
+
+contrib_cols <- setNames(
+  c(PAL$blue, PAL$aqua, PAL$yellow, PAL$green, PAL$violet, PAL$grid),
+  levels(contrib_plot$grp)
+)
+
+ggplot(contrib_plot, aes(mlab, contrib, fill = grp)) +
+  geom_hline(yintercept = 0, colour = PAL$axis, linewidth = 0.4) +
+  geom_col(width = 0.6, colour = PAL$surface, linewidth = 0.4) +
+  geom_point(data = head_pts, aes(mlab, total), inherit.aes = FALSE,
+             colour = PAL$ink, size = 2.2) +
+  geom_text(data = slice_tail(head_pts, n = 1),
+            aes(mlab, total, label = sprintf("headline %.1f%%", total)),
+            inherit.aes = FALSE, vjust = -1.2, hjust = 0.85,
+            colour = PAL$ink, size = 3.2, fontface = "bold") +
+  scale_fill_manual(values = contrib_cols) +
+  scale_y_continuous(labels = label_number(suffix = " pp"),
+                     expand = expansion(mult = c(0.02, 0.14))) +
+  labs(
+    title = "Contribution to headline inflation, by division",
+    subtitle = "Percentage points of the year-on-year rate · All-India Combined · dots mark the reconstructed headline",
+    x = NULL, y = NULL,
+    caption = "Derived from MoSPI division indices, published YoY rates and the official 2024 weighting diagram.\nContributions sum to the headline rate up to rounding in the published indices."
+  ) +
+  theme_tracker()
+```
+
+```{r tbl-divisions}
+#| fig-alt: "Sortable table of the latest month's CPI divisions."
+tbl <- latest_div |>
+  left_join(contrib_latest |> select(division, contrib), by = "division") |>
+  arrange(desc(contrib)) |>
+  transmute(
+    Division = division,
+    `Weight (%)` = weight,
+    Index = index,
+    `Inflation y/y (%)` = yoy,
+    `Contribution (pp)` = round(contrib, 2),
+    `Share of headline (%)` = round(100 * contrib / sum(contrib, na.rm = TRUE), 1)
+  )
+
+DT::datatable(
+  tbl,
+  rownames = FALSE,
+  caption = sprintf("CPI divisions, %s — All-India Combined, base 2024 = 100", latest_month),
+  options = list(paging = FALSE, searching = FALSE, info = FALSE,
+                 order = list(list(4, "desc")))
+) |>
+  DT::formatRound(c("Weight (%)", "Index", "Inflation y/y (%)"), 1)
+```
+
+### Largest moves within the 43 COICOP groups
+
+```{r tbl-movers, results='asis'}
+movers <- d24_grp |>
+  filter(sector == "Combined", date == latest_date, !is.na(yoy)) |>
+  left_join(divisions |> select(division, short), by = "division") |>
+  select(Group = group, Division = short, `y/y %` = yoy)
+
+up <- movers |> slice_max(`y/y %`, n = 5)
+dn <- movers |> slice_min(`y/y %`, n = 5)
+
+cat("\n:::: {.movers}\n\n::: {}\n**Fastest rising**\n\n")
+print(knitr::kable(up, digits = 1))
+cat("\n:::\n\n::: {}\n**Falling / slowest**\n\n")
+print(knitr::kable(dn, digits = 1))
+cat("\n:::\n\n::::\n")
+```
+
+## The long view, by spending group (2012-base series)
+
+The discontinued 2012-base series still provides twelve years of comparable
+group-level history — useful context for how unusual (or not) the current
+readings are. The grey line in each panel is headline inflation.
+
+```{r fig-history}
+#| fig-height: 6.6
+#| fig-alt: "Small-multiple line charts of year-on-year inflation for the six CPI groups of the 2012-base series from 2014 to 2025, each compared against headline inflation in grey."
+groups12 <- c("Food and Beverages", "Pan, Tobacco and Intoxicants",
+              "Clothing and Footwear", "Housing", "Fuel and Light", "Miscellaneous")
+
+hist_grp <- d12_group |>
+  filter(sector == "Combined", group %in% groups12,
+         date >= as.Date("2014-01-01"), !is.na(yoy)) |>
+  mutate(group = factor(group, levels = groups12))
+
+hist_ctx <- crossing(group = factor(groups12, levels = groups12),
+                     headline12 |> filter(date >= as.Date("2014-01-01")) |>
+                       select(date, hl = yoy))
+
+ggplot(hist_grp, aes(date, yoy)) +
+  geom_hline(yintercept = 0, colour = PAL$axis, linewidth = 0.35) +
+  geom_line(data = hist_ctx, aes(date, hl), colour = PAL$axis, linewidth = 0.5) +
+  geom_line(colour = PAL$blue, linewidth = 0.65) +
+  facet_wrap(~group, ncol = 2) +
+  scale_x_date(date_breaks = "4 years", date_labels = "%Y") +
+  scale_y_continuous(labels = label_number(suffix = "%")) +
+  labs(
+    title = "Group inflation vs headline (grey), 2014–2025",
+    subtitle = "Year-on-year % change, All-India Combined · CPI 2012 = 100 (series discontinued Dec 2025)",
+    x = NULL, y = NULL,
+    caption = "Source: MoSPI CPI API. Rural housing was outside the index before the 2024-base series."
+  ) +
+  theme_tracker()
+```
+
+## Data & method notes
+
+- **Source.** All figures are fetched at render time from the Ministry of Statistics
+  and Programme Implementations
+  <!-- 's open API (`api.mospi.gov.in`) — the same backend -->
+  as reported on the [eSankhyiki portal](https://esankhyiki.mospi.gov.in). 
+  <!-- No API key is required. -->
+  <!-- Endpoints: `getCPIIndex` (base 2012 = 100) and `getCPIData` (base 2024 = 100). -->
+- **Base switch.** MoSPI moved the CPI to base 2024 = 100 (COICOP 2018, 12 divisions)
+  with the January 2026 release. This page uses the 2012-base series through
+  December 2025 and the 2024-base series from January 2026; year-on-year rates are
+  as published for each series, so the chained trend matches official releases.
+- **Weights** are the official weighting diagram from MoSPI's first 2024-base press
+  release (12 Feb 2026): Food & beverages 36.75, Housing & utilities 17.67,
+  Transport 8.80, Clothing 6.38, Health 6.10, Personal care & misc 5.04, Household
+  goods 4.47, Info & communication 3.61, Restaurants 3.35, Education 3.33,
+  Paan & tobacco 2.99, Recreation 1.52 (All-India Combined).
+- **Contributions** are computed as
+  $w_g\,(I_{g,t}-I_{g,t-12}) \,/\, \sum_h w_h I_{h,t-12}$, where last year's index
+  is recovered from the published year-on-year rate. They reproduce the headline
+  rate up to rounding in the published indices.
+- **State map.** State/UT rates are the CPI (General) year-on-year change for the
+  Combined sector, from the same API. Boundaries are as published by the
+  Government of India (Survey of India depiction — Jammu & Kashmir and Ladakh
+  shown in full), taken from the district GeoJSON of
+  [udit-001/india-maps-data](https://github.com/udit-001/india-maps-data)
+  and dissolved to state level.
+<!-- - **Caching.** API pulls are cached in `data_cache/`; the current year refreshes -->
+<!--   after 12 hours, history monthly. Delete the folder to force a full re-download. -->
+<!--   New CPI data is normally released at 4 pm IST around the 12th of each month. -->
+<!-- - **Refresh** with `quarto render inflation-tracker.qmd` (or the Render button in -->
+<!--   RStudio). -->

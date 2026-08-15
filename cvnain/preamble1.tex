@@ -1,0 +1,76 @@
+\usepackage{marvosym}
+\usepackage{parskip}
+\usepackage{tfrupee}
+\usepackage{tabularx}
+\usepackage{booktabs}
+% ---------- Icons ----------
+\usepackage{fontawesome5}
+
+\newcommand{\secicon}[1]{#1\hspace{0.6em}}
+
+% Main font
+\usepackage{fontspec}
+\setmainfont{Raleway}[
+  Path           = ./fonts/,
+  Extension      = .ttf,
+  UprightFont    = *-Regular,
+  BoldFont       = *-Bold,
+  ItalicFont     = *-Italic,
+  BoldItalicFont = *-BoldItalic
+]
+
+% Chinese font
+\usepackage{xeCJK}
+\setCJKmainfont[Path = ./fonts/]{kaiti.ttf}
+
+% Colors for section lines
+\usepackage{xcolor}
+\definecolor{sectionline}{rgb}{0.5,0.7,0.8}
+\definecolor{subsectionline}{rgb}{0.4,0.4,0.8}
+
+% Custom section formatting with colored lines
+\usepackage{titlesec}
+
+% Format sections with colored line underneath
+\titleformat{\section}
+  {\normalfont\Large\bfseries}{\thesection}{1em}{}
+  [{\color{sectionline}\titlerule[1.5pt]}]
+
+% Format subsections with thinner colored line
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+  %[{\color{subsectionline}\titlerule[0.8pt]}]
+
+% Adjust spacing around sections
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{8pt}{4pt}
+
+% Compact spacing
+\usepackage{setspace}
+\setstretch{0.95}
+
+% Compact lists
+\usepackage{enumitem}
+\setlist{noitemsep, topsep=4pt, parsep=0pt, partopsep=0pt}
+
+% Tables
+\usepackage{booktabs}
+\usepackage{array}
+
+% Remove page numbers and footer
+\pagestyle{empty}
+
+% Links
+\usepackage{hyperref}
+\definecolor{linkcolour}{rgb}{0,0.2,0.6}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkcolour,
+    urlcolor=linkcolour,
+    citecolor=linkcolour
+}
+
+% For better table alignment
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}

@@ -1,0 +1,13 @@
+---
+title: "Software"
+---
+
+```{r setup, include=FALSE}
+source("R/helpers.R")
+```
+
+Interactive tools and applications I have built for working with data. The codes and data accompanying some of the published works. Anything to do with computing/non-computing software/programs.Use and share<i class="fa-solid fa-handshake"></i> <i class="fa-solid fa-heart"></i> 
+
+```{r software, results="asis"}
+print_software()
+```

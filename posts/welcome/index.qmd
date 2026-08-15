@@ -1,0 +1,15 @@
+---
+title: "Welcome to the blog"
+description: "Notes on economics, econometrics, policy, and teaching."
+date: 2026-07-09
+categories: [news]
+---
+
+This blog will carry occasional notes on macroeconomic policy, applied
+econometrics (time series methods, R, and Quarto workflows), the Indian
+economy, and material from my courses at AMU.
+
+<!-- To add a new post, create a folder inside `posts/` (for example -->
+<!-- `posts/my-new-post/`) containing an `index.qmd` with a `title`, `date`, -->
+<!-- `description`, and `categories` in its header — it will appear here -->
+<!-- automatically on the next render. -->

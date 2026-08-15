@@ -1,0 +1,142 @@
+name: Check for new CPI data
+
+# Watches MoSPI for a CPI release newer than the published inflation
+# tracker and opens an issue when the page falls behind.
+#
+# It deliberately does NOT render or publish anything. The tracker needs
+# sf/GDAL and draws a map worth looking at before it goes live, so the
+# rebuild stays a manual step (see the maintenance guide). This job only
+# does the remembering.
+
+on:
+  schedule:
+    # 06:30 UTC = 12:00 IST, daily from the 12th to the 18th. MoSPI
+    # publishes CPI around the 12th at 16:00 IST but slips; this checks
+    # each day through the window and stops once an issue is open.
+    - cron: "30 6 12-18 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Compare MoSPI's latest CPI month with the published page
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STATUS_FILE="software/tracker_status.json"
+          if [ ! -f "$STATUS_FILE" ]; then
+            echo "No $STATUS_FILE in the repo — render the tracker once to create it."
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PUBLISHED=$(jq -r '.latest_month' "$STATUS_FILE")
+          echo "Published page has: $PUBLISHED"
+
+          # Ask MoSPI for this year and last year of headline All-India CPI
+          # (base 2024, Combined sector, division 0) and take the newest
+          # month that actually carries a YoY inflation figure.
+          YEAR=$(date -u +%Y)
+          PREV=$((YEAR - 1))
+          LATEST=""
+          for Y in "$YEAR" "$PREV"; do
+            RESP=$(curl -sS --max-time 60 --retry 3 --retry-delay 5 -G \
+              "https://api.mospi.gov.in/api/cpi/getCPIData" \
+              --data-urlencode "base_year=2024" \
+              --data-urlencode "series=Current" \
+              --data-urlencode "state_code=1" \
+              --data-urlencode "sector_code=3" \
+              --data-urlencode "division_code=0" \
+              --data-urlencode "year=$Y" \
+              --data-urlencode "Format=JSON" \
+              --data-urlencode "limit=100" \
+              --data-urlencode "page=1" || echo '{}')
+
+            FOUND=$(echo "$RESP" | jq -r '
+              (.data // [])
+              | map(select(.inflation != null and .inflation != ""))
+              | map((.year|tostring) + "-" + (
+                  {January:"01",February:"02",March:"03",April:"04",
+                   May:"05",June:"06",July:"07",August:"08",
+                   September:"09",October:"10",November:"11",December:"12"}[.month] // "00"))
+              | map(select(endswith("-00") | not))
+              | sort | last // empty')
+
+            if [ -n "$FOUND" ]; then LATEST="$FOUND"; break; fi
+          done
+
+          if [ -z "$LATEST" ]; then
+            echo "MoSPI returned nothing usable — treating as no news, will retry tomorrow."
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "MoSPI latest:      $LATEST"
+          echo "published=$PUBLISHED" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+
+          if [[ "$LATEST" > "$PUBLISHED" ]]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open an issue if the tracker is behind
+        if: steps.check.outputs.stale == 'true'
+        uses: actions/github-script@v7
+        env:
+          PUBLISHED: ${{ steps.check.outputs.published }}
+          LATEST: ${{ steps.check.outputs.latest }}
+        with:
+          script: |
+            const { PUBLISHED, LATEST } = process.env;
+            const title = `Inflation tracker is behind: MoSPI has ${LATEST}`;
+
+            // Don't pile up one issue a day for the same release
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'inflation-tracker'
+            });
+            if (existing.data.some(i => i.title === title)) {
+              core.info('Issue already open for this release — nothing to do.');
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['inflation-tracker'],
+              body: [
+                `MoSPI has published CPI data for **${LATEST}**, but the tracker on the site still shows **${PUBLISHED}**.`,
+                '',
+                'To update, from the project folder:',
+                '',
+                '```powershell',
+                'cd software',
+                '$env:QUARTO_R = "C:\\Program Files\\R\\R-4.5.2\\bin"',
+                'quarto render inflation-tracker.qmd',
+                'cd ..',
+                'quarto render',
+                'git add .',
+                `git commit -m "Inflation tracker: ${LATEST} data"`,
+                'git push',
+                '```',
+                '',
+                'Glance at the state map before pushing — it is the part that breaks when MoSPI changes a field name.',
+                '',
+                'Close this issue once the site is rebuilt.'
+              ].join('\n')
+            });

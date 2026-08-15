@@ -1,0 +1,585 @@
+---
+format:
+  pdf:
+    pdf-engine: xelatex
+    documentclass: article
+    fontsize: 10pt
+    papersize: letter
+    geometry: "top=0.75in, bottom=0.75in, left=0.75in, right=0.75in"
+    include-in-header:
+      - preamble1.tex
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+# Load helpers
+source("helpers.R")
+
+# Load Excel data ONCE
+library(readxl)
+cv <- list(
+  projects      = read_excel("data/cv_data.xlsx", "projects"),
+  awards        = read_excel("data/cv_data.xlsx", "awards"),
+  publications  = read_excel("data/cv_data.xlsx", "publications"),
+  presentations = read_excel("data/cv_data.xlsx", "presentations"),
+  teaching      = read_excel("data/cv_data.xlsx", "teaching_courses"),
+  advising      = read_excel("data/cv_data.xlsx", "advising"),
+  service       = read_excel("data/cv_data.xlsx", "service"),
+  memberships   = read_excel("data/cv_data.xlsx", "memberships"),
+  skills        = read_excel("data/cv_data.xlsx", "skills"),
+  scholar_fb    = read_excel("data/cv_data.xlsx", "scholar_fallback"),
+  workshops     = read_excel("data/cv_data.xlsx", "workshops")
+)
+```
+
+```{=tex}
+% =========================
+% HEADER WITH ICONS (Like the curve CV)
+% =========================
+
+\begin{center}
+{\LARGE\textbf{Md Zulquar Nain, Ph.D.}}
+\end{center}
+
+\vspace{-5pt}
+
+% Two-column layout for contact info
+\begin{tabular}{@{}p{0.7\textwidth}@{}p{0.3\textwidth}@{}}
+\textbf{Department of Economics} & \faPhone\ +91 9492062286 \\
+\textbf{Faculty of Social Sciences} & \faEnvelope\ \href{mailto:zulquar.ec@amu.ac.in}{zulquar.ec@amu.ac.in} \\
+\textbf{Aligarh Muslim University} & \faGlobe\ \href{https://amu.ac.in/faculty/economics/md-zulquar-nain}{alignain} \\
+\textbf{Aligarh, UP 202002} & \faGraduationCap\ \href{https://scholar.google.co.in/citations?user=7Db2EHMAAAAJ}{Google Scholar} \\
+\end{tabular}
+
+\vspace{10pt}
+
+% =========================
+% EDUCATION
+% =========================
+
+\section*{Education}
+
+\begin{tabular}{@{}p{0.15\textwidth}p{0.85\textwidth}@{}}
+2019 & \textbf{Ph.D. Economics}, University of Hyderabad, Hyderabad \\
+     & Dissertation: \textit{Monetary Policy, Uncertainty, Inflation and Output in India} \\
+     & Supervisor: Prof. Bandi Kamaiah \\[6pt]
+2010 & \textbf{MA Economics}, University of Hyderabad, Hyderabad \\[6pt]
+2008 & \textbf{BA (Hons) Economics}, Aligarh Muslim University, Aligarh \\
+\end{tabular}
+
+\vspace{10pt}
+
+% =========================
+% ACADEMIC APPOINTMENTS
+% =========================
+
+\section*{Academic Appointments}
+
+\begin{tabular}{@{}p{0.15\textwidth}p{0.85\textwidth}@{}}
+2018--Present & \textbf{Assistant Professor}, Department of Economics \\
+              & Aligarh Muslim University, Aligarh, UP \\[6pt]
+2014--2018    & \textbf{Assistant Professor}, Department of Economics \\
+              & Maulana Azad National Urdu University (MANUU), Hyderabad, Telangana \\
+\end{tabular}
+
+\vspace{10pt}
+
+% =========================
+% RESEARCH EXPERIENCE
+% =========================
+
+\section*{Research Experience}
+
+\begin{tabular}{@{}p{0.15\textwidth}p{0.85\textwidth}@{}}
+2011--2014 & \textbf{Research Fellow}, School of Economics, University of Hyderabad \\[6pt]
+2010--2011 & \textbf{Research Associate}, Ministry of Commerce \& Industry, Govt. of India \\
+\end{tabular}
+
+\vspace{10pt}
+
+% =========================
+% RESEARCH INTERESTS
+% =========================
+
+\section*{Research Interests}
+%\vspace{-\baselineskip} % Adjust spacing if needed
+My research investigates the interplay between policy, financial systems, and the macroeconomy. I am particularly interested in the interaction of fiscal and monetary policies and their impact on economic outcomes. My work is organized around three key areas:
+
+\begin{description}[font=\normalfont\textbf, leftmargin=2.5cm, style=nextline, itemsep=0.5\baselineskip]
+    \item[Macroeconomic Policy \& Stabilization:] Analyzing the transmission mechanisms and effectiveness of monetary policy, alongside fiscal policy, in managing economic growth, inflation, and investment. Also exploring how economic uncertainty and FinTech developments challenge traditional policy frameworks.
+    
+    \item[Public Finance, Growth, \& Financial Stability:] Studying the role of public finance---including taxation, government expenditure, and sovereign debt---in long-term growth and financial market stability. 
+    
+    \item[International Trade \& Capital Flows:] Assessing how trade policies, tariffs, and fiscal incentives shape global trade patterns and capital flows. Examining the fiscal and macroeconomic consequences of trade barriers, protectionism, and shifts in global value chains.
+\end{description}
+
+\vspace{10pt}
+
+% =========================
+% TEACHING INTERESTS
+% =========================
+
+\section*{Teaching Interests}
+My teaching interests complement my research and span the theoretical, empirical, and policy-oriented foundations of economics.
+
+\begin{itemize}
+    \item Microeconomic Theory (Principles, Intermediate)
+    \item Macroeconomic Theory (Principles, Intermediate)
+    \item Econometrics \& Applied Empirical Methods
+    \item Mathematical Economics \& Optimization
+    \item Public Finance / Public Economics
+    \item Monetary Economics
+ %   \item International Trade
+\end{itemize}
+\vspace{10pt}
+```
+
+```{r, results="asis"}
+# SCHOLARSHIP/AWARDS
+cat("\n\n\\section*{Scholarship / Awards}\n\n")
+
+x <- cv$awards |>
+  arrange(desc(year)) |>
+  transmute(entry = paste0(year, ": ", latex_escape(description)))
+
+cat("\\begin{itemize}\n")
+cat(paste0("\\item ", x$entry, collapse = "\n"))
+cat("\n\\end{itemize}\n")
+```
+
+
+```{r, results="asis"}
+# PUBLICATIONS
+cat("\n\n\\section*{Publications}\n\n")
+
+cat("\\textbf{Google Scholar:} ")
+print_scholar_stats(
+  "https://scholar.google.co.in/citations?user=7Db2EHMAAAAJ&hl=en",
+  cv$scholar_fb
+)
+
+cat("\n\n")
+
+# -------------------------------
+# Canonical category keys in cv_data.xlsx "publications":
+#   journal | book_chapter | submitted | working | thesis
+# Subsections (A, B, C, ...) are lettered automatically and
+# formatted per category in helpers.R::print_pub_section().
+# -------------------------------
+pubs <- cv$publications |>
+  rename_with(tolower) |>
+  mutate(category = tolower(trimws(category)))
+
+print_all_publications(pubs)
+```
+
+
+
+
+
+
+
+
+```{r, results="asis"}
+# PROJECTS
+cat("\n\n\\section*{Projects}\n\n")
+
+projects <- cv$projects |>
+  arrange(desc(submission_date))
+
+for (i in seq_len(nrow(projects))) {
+  cat(
+    i, ". ",
+    "``", latex_escape(projects$title[i]), "''. ",
+    "\\emph{", latex_escape(projects$sponsor[i]), "}",
+    ifelse(
+      !is.na(projects$amount[i]) & projects$amount[i] != "",
+      paste0(" (", latex_escape(projects$amount[i]), ")"),
+      ""
+    ),
+    ". ",
+    latex_escape(projects$period[i]),
+    ".",
+    ifelse(
+      projects$co_pi[i] == "yes" & !is.na(projects$co_pi_name[i]) & projects$co_pi_name[i] != "",
+      paste0(" With ", latex_escape(projects$co_pi_name[i]), "."),
+      ""
+    ),
+    "\n\n",
+    sep = ""
+  )
+}
+```
+
+<!-- # ```{r, results="asis"} -->
+<!-- # # PRESENTATIONS -->
+<!-- # cat("\n\n\\section*{Presentations / Conferences}\n\n") -->
+<!-- #  -->
+<!-- # talks_df <- cv$presentations |> -->
+<!-- #   mutate(date_parsed = suppressWarnings(as.Date(date))) |> -->
+<!-- #   arrange(desc(date_parsed)) -->
+<!-- #  -->
+<!-- # # Group by category -->
+<!-- # for (grp in unique(talks_df$category)) { -->
+<!-- #   df <- talks_df |> filter(category == grp) -->
+<!-- #   if (nrow(df) == 0) next -->
+<!-- #    -->
+<!-- #   cat("\\subsection*{", latex_escape(grp), "}\n\n", sep = "") -->
+<!-- #    -->
+<!-- #   for (i in seq_len(nrow(df))) { -->
+<!-- #     cat( -->
+<!-- #       i, ". ", -->
+<!-- #       "``", latex_escape(df$title[i]), "''. ", -->
+<!-- #       ifelse( -->
+<!-- #         is.na(df$with[i]) | df$with[i] == "", -->
+<!-- #         "", -->
+<!-- #         paste0("With ", latex_escape(df$with[i]), ". ") -->
+<!-- #       ), -->
+<!-- #       latex_escape(df$venue[i]), ", ", -->
+<!-- #       latex_escape(df$location[i]), ". ", -->
+<!-- #       ifelse( -->
+<!-- #         is.na(df$date_parsed[i]), -->
+<!-- #         "", -->
+<!-- #         paste0(format(df$date_parsed[i], "%b %d, %Y"), ". ") -->
+<!-- #       ), -->
+<!-- #       ifelse( -->
+<!-- #         is.na(df$slides[i]) | df$slides[i] == "", -->
+<!-- #         "", -->
+<!-- #         paste0("\\href{", df$slides[i], "}{Slides}.") -->
+<!-- #       ), -->
+<!-- #       "\n\n" -->
+<!-- #     ) -->
+<!-- #   } -->
+<!-- # } -->
+<!-- # ``` -->
+
+
+
+
+
+
+```{r, results="asis"}
+# Presentations / Conferences
+cat("\n\n\\section*{Presentations / Conferences}\n\n")
+
+talks_df <- cv$presentations |>
+  mutate(
+    date_parsed = suppressWarnings(as.Date(date)),
+    year = ifelse(
+      is.na(date_parsed),
+      "",
+      format(date_parsed, "%Y")
+    )
+  ) |>
+  arrange(desc(date_parsed))
+
+# Print each category
+for (grp in unique(talks_df$category)) {
+
+  df <- talks_df |>
+    filter(category == grp)
+
+  if (nrow(df) == 0) next
+
+  cat(
+    paste0("\\subsection*{", latex_escape(grp), "}\n\n")
+  )
+
+  # Print each presentation
+  for (i in seq_len(nrow(df))) {
+
+    entry <- paste0(
+      "\\hangindent=2.2em \\hangafter=1 ",
+      i, ". ",
+      "\\textbf{", latex_escape(df$title[i]), "}",
+
+      if (!is.na(df$organised[i]) && nzchar(df$organised[i]))
+        paste0(", organised by ", latex_escape(df$organised[i]))
+      else
+        "",
+
+      if (!is.na(df$location[i]) && nzchar(df$location[i]))
+        paste0(", ", latex_escape(df$location[i]))
+      else
+        "",
+
+      if (nzchar(df$year[i]))
+        paste0(", ", df$year[i], ".")
+      else
+        "."
+    )
+
+    cat(entry, "\n\n")
+  }
+}
+```
+
+
+
+
+
+
+
+
+
+
+```{r, results="asis"}
+# WORKSHOPS AND TRAINING
+cat("\n\n\\section*{Workshops and Training}\n\n")
+
+# Use the function from helpers.R
+print_workshops(cv$workshops)
+```
+
+
+
+<!-- # ```{r, results="asis"} -->
+<!-- # # TEACHING -->
+<!-- # cat("\n\n\\section*{Teaching}\n\n") -->
+<!-- #  -->
+<!-- # levels <- c("UG", "PG", "PhD") -->
+<!-- #  -->
+<!-- # for (inst in unique(cv$teaching$institution)) { -->
+<!-- #   df_inst <- cv$teaching |> filter(institution == inst) -->
+<!-- #   if (nrow(df_inst) == 0) next -->
+<!-- #    -->
+<!-- #   cat("\\subsection*{", latex_escape(inst), "}\n\n", sep = "") -->
+<!-- #    -->
+<!-- #   # Split courses by level -->
+<!-- #   courses_by_level <- lapply(levels, function(lvl) { -->
+<!-- #     df_inst |> -->
+<!-- #       filter(level == lvl) |> -->
+<!-- #       pull(course_title) |> -->
+<!-- #       as.character() -->
+<!-- #   }) -->
+<!-- #   names(courses_by_level) <- levels -->
+<!-- #    -->
+<!-- #   # Max number of rows needed -->
+<!-- #   n_rows <- max(sapply(courses_by_level, length)) -->
+<!-- #    -->
+<!-- #   # Start table (auto-fit textwidth) -->
+<!-- #   cat("\\begin{tabularx}{\\textwidth}{@{}X X X@{}}\n") -->
+<!-- #   cat("\\toprule\n") -->
+<!-- #   cat("\\textbf{UG Courses} & \\textbf{PG Courses} & \\textbf{PhD Courses} \\\\\n") -->
+<!-- #   cat("\\midrule\n") -->
+<!-- #    -->
+<!-- #   for (i in seq_len(n_rows)) { -->
+<!-- #     row_vals <- sapply(levels, function(lvl) { -->
+<!-- #       val <- courses_by_level[[lvl]][i] -->
+<!-- #       ifelse(is.na(val) | is.null(val), "", latex_escape(val)) -->
+<!-- #     }) -->
+<!-- #      -->
+<!-- #     cat( -->
+<!-- #       row_vals[1], " & ", -->
+<!-- #       row_vals[2], " & ", -->
+<!-- #       row_vals[3], " \\\\\n" -->
+<!-- #     ) -->
+<!-- #   } -->
+<!-- #    -->
+<!-- #   cat("\\bottomrule\n") -->
+<!-- #   cat("\\end{tabularx}\n\n") -->
+<!-- # } -->
+<!-- # ``` -->
+
+
+
+
+
+```{r, results="asis"}
+# TEACHING
+cat("\n\n\\section*{Teaching}\n\n")
+
+# Courses are grouped by level and run into a sentence rather than set as
+# a table: the old Level column repeated three values down twelve rows and
+# cost most of a page. Keep these labels in step with TEACH_LEVELS in the
+# website's R/helpers.R so both documents read the same.
+level_names <- c(UG = "Undergraduate", PG = "Postgraduate", PhD = "Ph.D.")
+
+for (inst in unique(cv$teaching$institution)) {
+
+  df_inst <- cv$teaching |> filter(institution == inst)
+  if (nrow(df_inst) == 0) next
+
+  cat("\\subsection*{", latex_escape(inst), "}\n\n", sep = "")
+
+  # Any level code not in level_names still prints, under its raw code
+  lvls <- c(names(level_names),
+            setdiff(unique(df_inst$level[!is.na(df_inst$level)]), names(level_names)))
+
+  for (lvl in lvls) {
+
+    courses <- df_inst |>
+      filter(!is.na(level) & level == lvl) |>
+      arrange(course_title) |>
+      pull(course_title)
+
+    courses <- courses[!is.na(courses) & courses != ""]
+    if (!length(courses)) next
+
+    heading <- if (lvl %in% names(level_names)) level_names[[lvl]] else lvl
+
+    cat(
+      "\\hangindent=1.5em \\hangafter=1 ",
+      "\\textbf{", latex_escape(heading), ":} ",
+      paste(latex_escape(courses), collapse = "; "),
+      ".\n\n",
+      sep = ""
+    )
+  }
+}
+```
+
+
+
+
+
+<!-- ```{r, results="asis"} -->
+<!-- # TEACHING -->
+<!-- cat("\n\n\\section*{Teaching}\n\n") -->
+
+<!-- for (inst in unique(cv$teaching$institution)) { -->
+<!--   df_inst <- cv$teaching |> filter(institution == inst) -->
+<!--   if (nrow(df_inst) == 0) next -->
+
+<!--   cat("\\subsection*{", latex_escape(inst), "}\n\n", sep = "") -->
+
+<!--   # Table without Sem. column -->
+<!--   cat("\\begin{tabular}{@{}L{0.6\\textwidth} l@{}}\n") -->
+<!--   cat("\\toprule\n") -->
+<!--   cat("\\textbf{Course} & \\textbf{Level} \\\\\n") -->
+<!--   cat("\\midrule\n") -->
+
+<!--   for (i in seq_len(nrow(df_inst))) { -->
+<!--     cat( -->
+<!--       latex_escape(paste(df_inst$course_code[i], df_inst$course_title[i])), " & ", -->
+<!--       latex_escape(df_inst$level[i]), " \\\\\n" -->
+<!--     ) -->
+<!--   } -->
+
+<!--   cat("\\bottomrule\n") -->
+<!--   cat("\\end{tabular}\n\n") -->
+<!-- } -->
+<!-- ``` -->
+
+
+
+
+
+
+
+
+
+
+```{r, results="asis"}
+# ADVISING
+cat("\n\n\\section*{Advising}\n\n")
+
+adv_heading <- function(level) {
+  switch(
+    level,
+    phd = "Ph.D. Students",
+    ms = "Masters Students",
+    ug = "Undergraduate Students",
+    hs = "High School Students",
+    committee = "Ph.D. Committee Member",
+    latex_escape(level)
+  )
+}
+
+for (lvl in c("phd", "ms", "ug", "hs", "committee")) {
+  df <- cv$advising |> filter(level == lvl)
+  if (nrow(df) == 0) next
+  
+  cat("\\subsection*{", adv_heading(lvl), "}\n\n", sep = "")
+  
+  for (i in seq_len(nrow(df))) {
+    cat("\\hangindent=1.5em \\hangafter=1 ",
+      i, ". ",
+      latex_escape(df$name[i]),
+      ifelse(!is.na(df$title[i]) & df$title[i] != "",
+             paste0(", ``", latex_escape(df$title[i]), "''"), ""),
+      ", ", latex_escape(df$institution[i]),
+      " (", df$start_year[i], "--", df$end_year[i], ").",
+      ifelse(!is.na(df$notes[i]) & df$notes[i] != "",
+             paste0(" ", latex_escape(df$notes[i])), ""),
+      "\n\n",
+      sep = ""
+    )
+  }
+}
+```
+
+<!-- # ```{r, results="asis"} -->
+<!-- # # SERVICE -->
+<!-- # cat("\n\n\\section*{Academic/Administrative Assignments}\n\n") -->
+<!-- #  -->
+<!-- # for (grp in unique(cv$service$category)) { -->
+<!-- #   df <- cv$service |> filter(category == grp) -->
+<!-- #   if (nrow(df) == 0) next -->
+<!-- #    -->
+<!-- #   cat("\\subsection*{", latex_escape(grp), "}\n\n", sep = "") -->
+<!-- #    -->
+<!-- #   for (i in seq_len(nrow(df))) { -->
+<!-- #     cat( -->
+<!-- #       i, ". ", -->
+<!-- #       latex_escape(df$role[i]), ", ", -->
+<!-- #       latex_escape(df$organization[i]), " (", -->
+<!-- #       latex_escape(df$years[i]), ").\n\n" -->
+<!-- #     ) -->
+<!-- #   } -->
+<!-- # } -->
+<!-- # ``` -->
+
+```{=tex}
+% =========================
+% AFFILIATIONS & SKILLS
+% =========================
+
+\section*{Academic Affiliation}
+
+\begin{itemize}
+\item The Indian Econometric Society (TIES), India (\href{http://www.tiesindia.net/}{http://www.tiesindia.net/})
+\end{itemize}
+
+\vspace{15pt}
+
+\section*{Skills}
+
+\begin{itemize}
+\item \textbf{Statistical Software:} RATS, R, STATA, GAUSS, Microfit, Matlab
+\item \textbf{Database:} WDI, IMF-IFS, IMF-WEO, COWTRADE, FAOSTAT, UN-Comtrade, IndiaStat, CMIE, EPW Research Foundation and Bloomberg (beginner level)
+\item \textbf{Mark-up:} LaTeX, R-Markdown and Quarto
+\item \textbf{Languages:} English, Hindi, Urdu
+\end{itemize}
+
+\vspace{15pt}
+
+% =========================
+% REFERENCES (Formatted like the curve CV)
+% =========================
+
+\section*{References}
+
+\vspace{5pt}
+
+\begin{tabular}{@{}p{0.3\textwidth}p{0.65\textwidth}@{}}
+\textbf{Prof. Bandi Kamaiah} & \textbf{School of Economics} \\
+Professor & University of Hyderabad \\
+& Hyderabad, India 500046 \\
+& \faEnvelope\ \href{mailto:kamaiahbandi@gmail.com}{kamaiahbandi@gmail.com} \\[8pt]
+
+\textbf{Prof. Farida Siddiqui} & \textbf{Department of Economics} \\
+Professor & Maulana Azad National Urdu University (MANUU) \\
+& Hyderabad, India 500046 \\
+& \faEnvelope\ \href{mailto:faridajsiddiqui@gmail.com}{faridajsiddiqui@gmail.com} \\[8pt]
+
+\textbf{Prof. Nisar Ahmad Khan} & \textbf{Department of Economics} \\
+Professor & Aligarh Muslim University \\
+& Aligarh, India 202002 \\
+& \faEnvelope\ \href{mailto:nisarahmadkhan@rediffmail.com}{nisarahmadkhan@rediffmail.com} \\
+\end{tabular}
+```
+

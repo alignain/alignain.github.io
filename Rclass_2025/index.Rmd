@@ -1,0 +1,17 @@
+---
+title: "ECM2073"
+author: "Zulquar Nain"
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_flat: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Welcome to the Course Website
+
+This website will serve as a central repository for class presentations, data sets, and executable code, tailored for courses integrating computer applications in economics.

@@ -1,0 +1,185 @@
+---
+title: "Sectoral Analysis of Indian Stock Market Indices"
+author: "Student Author Name"
+format:
+  docx:
+    toc: true
+    number-sections: true
+    toc-location: body
+    toc-title: "Table of Contents"
+    toc-depth: 3
+execute:
+  echo: false
+  warning: false
+  message: false
+crossref:
+  labels: roman
+  title-delim: "-"
+#  enabled: true     # Required for numbering
+  fig-prefix: "Fig." # Customize prefix
+bibliography: references.bib
+#csl: apa.csl
+---
+
+\newpage 
+
+# Abstract{.unnumbered}
+
+Abstract of the project goes here.
+
+\newpage
+
+# Introduction
+
+Introduction of the study goes here. For example, see the below paragraph. <break>
+Sectoral indices reflect the performance of key industries within the stock market. Understanding their behavior is crucial for investors, policymakers, and analysts. This report addresses the following research questions:
+
+- What are the trends in sector indices from 2020–2025?
+- Are daily returns normally distributed?
+- Do average returns differ significantly across sectors?
+- Are sector returns correlated?
+- Can banking returns be predicted using IT and FMCG?
+- Which sector is the most volatile?
+- Do returns follow a random walk?
+- Is there a causal relationship among sectors?
+
+# Data and Methodology
+
+```{r}
+# Load required libraries
+library(tidyverse)
+library(quantmod)
+library(tseries)
+library(lmtest)
+library(broom)
+library(ggcorrplot)
+library(urca)
+library(vars)
+library(knitr)
+```
+
+## Data 
+
+Write here about the data here.
+
+```{r}
+#| label: return calculation
+symbols <- c("^NSEBANK", "^CNXIT", "^CNXFMCG")
+
+# Download historical data
+data_list <- map(symbols, ~ getSymbols(.x, src = "yahoo", 
+                                       from = "2020-01-01", 
+                                       to = "2025-01-01", 
+                                       auto.assign = FALSE))
+
+# Name elements
+names(data_list) <- c("Bank", "IT", "FMCG")
+
+# Calculate returns and rename columns
+returns_data <- imap(data_list, ~ {
+  dailyReturn(Cl(.x)) %>%
+    as.data.frame() %>%
+    rownames_to_column(var = "Date") %>%
+    rename(!!.y := 2)
+})
+
+# Merge all returns by Date
+returns_df <- reduce(returns_data, full_join, by = "Date")
+returns_df$Date <- as.Date(returns_df$Date)
+```
+
+## Methodology
+
+Write here, about the methods used for the analysis.
+
+
+# Results and discussion
+
+Write here about the results which have been obtained after employing above stated methodologies and discuss about the results. 
+
+## Trend Analysis
+
+```{r}
+#| label: Trend Analysis
+data_list %>%
+  imap(~ggplot(data = tibble(Date = index(.x), Close = Cl(.x))) +
+         geom_line(aes(x = Date, y = Close), color = "blue") +
+         labs(title = paste("Trend of", .y), x = "Date", y = "Closing Price") +
+         theme_minimal())
+```
+
+## Normality of Returns
+
+```{r}
+#| label: Normality Check
+returns_long <- returns_df %>%
+  pivot_longer(cols = c(Bank, IT, FMCG), names_to = "Sector", values_to = "Return")
+
+ggplot(returns_long, aes(x = Return)) +
+  geom_histogram(bins = 50, fill = "lightblue", color = "black") +
+  facet_wrap(~Sector, scales = "free") +
+  theme_minimal()
+```
+
+## Difference in Mean Returns
+
+```{r}
+#| label: Mean Difference
+aov_model <- aov(Return ~ Sector, data = returns_long)
+kable(tidy(aov_model), caption = "Table 1: ANOVA Results for Sectoral Returns")
+```
+
+## Correlation Between Sectors
+
+```{r }
+#| label: Fig-Correlation Matrix
+#| fig-cap: Correlation among sectorl returns
+#| fig-align: center
+#| fig-height: 5 
+#| fig-width: 5 
+
+cor_matrix <- returns_df %>%
+  dplyr::select(Bank, IT, FMCG) %>%
+  cor(use = "complete.obs")
+
+ggcorrplot(cor_matrix, lab = TRUE)
+```
+
+## Predicting Banking Returns
+
+```{r}
+#| label: return prediction
+lm_model <- lm(Bank ~ IT + FMCG, data = returns_df)
+kable(tidy(lm_model), caption = "Table 2: Regression Model Predicting Bank Returns")
+```
+
+## Volatility Comparison
+
+```{r}
+#| label: Volatility 
+volatility <- returns_df %>%
+  summarise(across(c(Bank, IT, FMCG), ~ sd(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "Sector", values_to = "Volatility")
+kable(volatility, caption = "Table 3: Sector-wise Volatility")
+```
+
+
+
+The analysis indicates that sectoral indices show distinct dynamics. Banking sector returns exhibit higher volatility, while FMCG remains relatively stable. ANOVA and regression models suggest statistically significant differences and predictive relationships across sectors. ADF results reject the random walk hypothesis, suggesting the market is not fully efficient.
+
+# Conclusion
+
+This report highlights structural differences across sectors, predictive linkages, and implications for market efficiency. These insights support diversification strategies and inform policy planning in financial regulation.
+
+# References
+
+- Fama, E. F. (1970). Efficient Capital Markets: A Review of Theory and Empirical Work.
+- Lo, A. W., & MacKinlay, A. C. (1988). Stock Market Prices Do Not Follow Random Walks.
+- Mishra, A. K., & Sethi, D. (2021). Sectoral Returns and Macroeconomic Variables: Evidence from Indian Stock Market.
+
+# Appendix: R Code
+
+```{r}
+# Display full R code here 
+# You can copy the codes used in the above analyses and write here with brief explanations.
+```

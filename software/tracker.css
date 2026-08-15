@@ -1,0 +1,68 @@
+/* India Inflation Tracker — page chrome (palette: dataviz reference instance) */
+
+body {
+  background: #f9f9f7;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 1.2rem 0 0.4rem 0;
+}
+
+.kpi {
+  background: #fcfcfb;
+  border: 1px solid rgba(11, 11, 11, 0.10);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #898781;
+  margin-bottom: 4px;
+}
+
+.kpi-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #0b0b0b;
+}
+
+.kpi-delta,
+.kpi-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #52514e;
+}
+
+.kpi-delta.down { color: #006300; }
+.kpi-delta.up   { color: #d03b3b; }
+
+.kpi-note {
+  font-size: 0.8rem;
+  color: #898781;
+  margin: 0.5rem 0 1.5rem 0;
+}
+
+.movers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.movers > div {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.movers table {
+  font-size: 0.85rem;
+}
+
+figure.figure { margin-bottom: 2rem; }

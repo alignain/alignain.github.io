@@ -1,0 +1,526 @@
+/* ============================================================
+   Academic personal website — styles
+   Animated canvas background sits behind everything; sections
+   use translucent white so the animation shows through softly.
+   ============================================================ */
+
+:root {
+  --accent: #69b3a2;        /* fills and rules only — 2.5:1, never for text */
+  --accent-dark: #4e8d7e;   /* large text and borders — 3.9:1 */
+  --accent-text: #376a5d;   /* small text and links — 6.2:1, passes WCAG AA */
+  --ink: #1d2937;
+  --ink-soft: #4b5563;
+}
+
+body {
+  font-family: "Inter", -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: #fbfcfc;
+}
+
+/* ---------- links, callouts, code ----------
+   Cosmo ships #2761e3 for links, a blue callout accent and pink inline
+   code — three accents fighting the teal. Pull them all onto the palette.
+   Buttons and navbar set their own colours with !important, so they are
+   unaffected by the link rule below. */
+main a { color: var(--accent-text); text-underline-offset: 0.15em; }
+main a:hover { color: var(--ink); }
+
+main .callout.callout-style-default .callout-title { background: rgba(105, 179, 162, 0.14); }
+main .callout-note { border-left-color: var(--accent) !important; }
+/* The icon is a blue SVG (hue ~220deg); -60deg lands it on the teal at
+   ~160deg. Rotating the other way turns it pink. */
+main .callout-note .callout-icon::before { filter: hue-rotate(-60deg) saturate(0.65); }
+
+main code:not(.sourceCode) {
+  color: var(--accent-text);
+  background: rgba(105, 179, 162, 0.11);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* ---------- reading measure ----------
+   Article pages only: the homepage carries page-layout-custom and its
+   full-bleed sections must not be constrained. Academic prose reads
+   badly much past ~72 characters, and Bootstrap's 1.5 line-height is
+   tight for long citation lists. */
+.page-layout-article main.content {
+  max-width: 72ch;
+  line-height: 1.7;
+}
+/* tables and figures may still use the full column */
+.page-layout-article main.content > .cell,
+.page-layout-article main.content table { max-width: none; }
+.page-layout-article main.content table { width: 100%; }
+
+h1, h2, h3, .hero-name {
+  font-family: "Source Serif 4", Georgia, serif;
+}
+
+/* ---------- animated background canvas ---------- */
+#econ-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ---------- hero ---------- */
+.hero {
+  min-height: calc(100vh - 60px);   /* fallback */
+  min-height: calc(100svh - 60px);  /* correct height on mobile browsers */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  position: relative;
+}
+
+.hero-card {
+  max-width: 730px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(29, 41, 55, 0.08);
+  border-radius: 20px;
+  padding: 3rem 2.6rem 2.6rem;
+  box-shadow: 0 18px 50px rgba(29, 41, 55, 0.08);
+}
+
+.portrait {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 1.3rem;
+  box-shadow: 0 8px 24px rgba(29, 41, 55, 0.18);
+}
+.portrait-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), #3f6f63);
+  color: #fff;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 3.4rem;
+  font-weight: 700;
+}
+
+.hero-name {
+  font-size: clamp(2.1rem, 5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.2rem;
+  border: none;
+  /* stops the name breaking as "Md Zulquar Nain," / "Ph.D." with the
+     comma left dangling at the end of the first line */
+  text-wrap: balance;
+}
+
+.hero-role {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin: 0 0 0.15rem;
+}
+
+.hero-affil {
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  margin-bottom: 1.3rem;
+}
+
+.hero-blurb {
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin-bottom: 1.7rem;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.6rem;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 1.4rem;
+  color: var(--accent-dark);
+  font-size: 1.3rem;
+  animation: bounce 2.2s infinite;
+}
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+  60% { transform: translateY(-4px); }
+}
+
+/* ---------- buttons ---------- */
+.btn-pill {
+  display: inline-block;
+  padding: 0.6rem 1.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.93rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+.btn-filled {
+  background: var(--accent);
+  color: #fff !important;
+  border: 2px solid var(--accent);
+}
+.btn-filled:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  transform: translateY(-2px);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--ink) !important;
+  border: 2px solid var(--ink);
+}
+.btn-outline:hover {
+  background: var(--ink);
+  color: #fff !important;
+  transform: translateY(-2px);
+}
+.btn-filled-light {
+  background: #fff;
+  color: var(--accent-dark) !important;
+  border: 2px solid #fff;
+}
+.btn-filled-light:hover { transform: translateY(-2px); }
+
+/* ---------- social icons ---------- */
+.hero-socials {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hero-socials a {
+  width: 42px;
+  height: 42px;
+  border: 1.5px solid rgba(29, 41, 55, 0.18);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 1.05rem;
+  transition: all 0.25s ease;
+}
+.hero-socials a:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+/* ---------- sections ---------- */
+/* Lower the 0.80 below to let more of the animated background
+   show through the content sections (0.6 = strong, 0.95 = faint) */
+.section {
+  padding: 4.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.80);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.section-inner { max-width: 950px; margin: 0 auto; }
+
+.section-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.8rem;
+  margin-bottom: 2.6rem;
+  border: none;
+}
+.section-title::after {
+  content: "";
+  display: block;
+  width: 54px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  margin: 0.7rem auto 0;
+}
+
+/* ---------- interest cards ---------- */
+.cards-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.card-interest {
+  background: #fff;
+  border: 1px solid rgba(29, 41, 55, 0.07);
+  border-radius: 14px;
+  padding: 2rem 1.6rem;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(29, 41, 55, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-interest:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(29, 41, 55, 0.09);
+}
+.card-interest i { font-size: 1.9rem; color: var(--accent); margin-bottom: 0.9rem; }
+.card-interest h3 { font-size: 1.12rem; margin-bottom: 0.55rem; }
+.card-interest p { color: var(--ink-soft); font-size: 0.92rem; margin: 0; }
+
+/* ---------- papers ---------- */
+.paper {
+  background: #fff;
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 1.4rem 1.6rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 3px 14px rgba(29, 41, 55, 0.05);
+}
+.paper h3 { font-size: 1.08rem; margin: 0 0 0.3rem; }
+.paper-meta {
+  color: var(--accent-text);   /* was --accent-dark: 3.9:1, under WCAG AA */
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.paper p { color: var(--ink-soft); font-size: 0.95rem; margin: 0; }
+
+/* Sentence-length note on a software card. Deliberately NOT .paper-meta:
+   that is uppercase, which suits a short label and shouts as a sentence. */
+.soft-note {
+  color: var(--ink-soft) !important;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0.6rem 0 0 !important;
+}
+
+/* ---------- research page: year-gutter publication list ---------- */
+.pub-list { margin: 0.4rem 0 2.2rem; }
+.pub-entry {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr;
+  gap: 0 1rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid rgba(29, 41, 55, 0.08);
+}
+.pub-entry:last-child { border-bottom: 1px solid rgba(29, 41, 55, 0.08); }
+.pub-year {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  padding-top: 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+/* Titles must look identical whether or not the paper has a DOI to link
+   to — `main a` would otherwise tint the linked ones. */
+.pub-title,
+.pub-title a {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.pub-title { margin: 0 0 0.2rem; }
+.pub-title a { text-decoration: none; }
+.pub-title a:hover { color: var(--accent-text); text-decoration: underline; }
+.pub-authors {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.15rem;
+}
+.pub-authors strong { color: var(--ink); font-weight: 600; }
+.pub-venue {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.pub-venue a.pub-doi { color: var(--ink-soft); text-decoration: none; }
+.pub-venue a.pub-doi:hover { color: var(--accent-text); text-decoration: underline; }
+
+@media (max-width: 560px) {
+  .pub-entry { grid-template-columns: 1fr; gap: 0; }
+  .pub-year { margin-bottom: 0.15rem; }
+}
+
+/* software page cards: compact pill buttons under each tool */
+.soft-card { margin-bottom: 1.4rem; }
+/* "Data through Jul 2026" line, written by the page's own status file */
+.soft-stamp {
+  margin: 0.55rem 0 0 !important;
+  font-size: 0.84rem;
+  color: var(--ink-soft) !important;
+}
+.soft-stamp strong { color: var(--accent-dark); }
+.soft-links { margin-top: 0.9rem !important; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.soft-links .btn-pill { padding: 0.38rem 1.15rem; font-size: 0.85rem; }
+.more-link { text-align: center; margin-top: 1.6rem; }
+.more-link a { color: var(--accent-dark); font-weight: 600; text-decoration: none; }
+/* ---------- teaching page: course listing ---------- */
+/* One card per .qmd in courses/ — generated by the `listing:` block
+   at the top of teaching.qmd, so a new course page appears here on
+   its own with no list to maintain. */
+/* NOTE the id: Quarto renames the `::: {#course-pages}` div to
+   #listing-course-pages when it builds the listing, so styling
+   #course-pages silently matches nothing. */
+#listing-course-pages { margin: 1.4rem 0 1rem; }
+/* The default listing reserves a left column for the date. `fields` omits
+   date here, so that column renders empty and pushes the card's text a
+   third of the way across. Collapse it. */
+#listing-course-pages .quarto-post .metadata { display: none; }
+#listing-course-pages .quarto-post {
+  background: #fff;
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 1.3rem 1.5rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 3px 14px rgba(29, 41, 55, 0.05);
+  gap: 1.4rem;
+  align-items: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+#listing-course-pages .quarto-post:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(29, 41, 55, 0.09);
+}
+#listing-course-pages .thumbnail-image {
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(29, 41, 55, 0.07);
+}
+#listing-course-pages .listing-title {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+#listing-course-pages .listing-title a { text-decoration: none; color: var(--ink); }
+#listing-course-pages .listing-title a:hover { color: var(--accent-text); }
+#listing-course-pages .listing-subtitle {
+  color: var(--accent-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+}
+#listing-course-pages .listing-description {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* ---------- course pages (courses/*.qmd) ---------- */
+/* Slide, data and script tables: roomier rows, quiet header. */
+main table {
+  font-size: 0.95rem;
+  border-collapse: collapse;
+}
+main table th {
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+main table td, main table th { padding: 0.45rem 0.7rem; }
+main table tbody tr:hover { background: rgba(105, 179, 162, 0.07); }
+
+/* ---------- scholar stat badges ---------- */
+.scholar-badges a { text-decoration: none; }
+.sbadge {
+  display: inline-block;
+  background: rgba(105, 179, 162, 0.16);
+  color: #2f5d53;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  margin: 0 0.55rem 0.55rem 0;
+}
+.scholar-badges a:hover .sbadge { background: rgba(105, 179, 162, 0.3); }
+
+.pub-links a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-right: 0.9rem;
+  text-decoration: none;
+}
+
+/* ---------- data corner ---------- */
+.chart-note {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  margin: -1.6rem 0 1.6rem;
+}
+/* latest readings + attribution, under the chart */
+.chart-source {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  margin: 0.6rem 0 0;
+}
+.chart-source a { color: var(--accent-dark); text-decoration: none; }
+.chart-source strong { color: var(--ink); }
+
+/* ---------- contact band ---------- */
+.band {
+  background: linear-gradient(120deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  padding: 3rem 1.5rem;
+}
+.band-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.band h2 { font-size: 1.5rem; margin: 0 0 0.3rem; border: none; color: #fff; }
+.band p { margin: 0; opacity: 0.92; }
+
+/* ---------- visitor badge (GoatCounter, footer right) ---------- */
+/* The badge SVG hard-codes purple (#9a15a4) for its border and text and
+   ignores ?style=, so the colour has to be neutralised here: greyscale drops
+   it to a mid grey, the opacity and reduced height stop a counter reading "0"
+   from being the loudest thing on the page. Hover restores it for anyone
+   actually looking for the number. */
+.visitor-badge {
+  height: 38px;
+  width: auto;
+  filter: grayscale(1);
+  opacity: 0.5;
+  vertical-align: middle;
+  transition: opacity 0.2s ease;
+}
+.visitor-badge:hover { opacity: 0.85; }
+
+/* ---------- inner pages (research, cv, teaching) ---------- */
+.content-page { max-width: 850px; margin: 0 auto; }
+
+/* long links (DOIs etc.) must never overflow small screens */
+p a, li a { overflow-wrap: anywhere; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1050px) {
+  .cards-3 { grid-template-columns: repeat(2, 1fr); }   /* tablets */
+}
+@media (max-width: 850px) {
+  .hero-card { padding: 2.2rem 1.4rem; }
+  .band-inner { justify-content: center; text-align: center; }
+}
+@media (max-width: 680px) {
+  .cards-3 { grid-template-columns: 1fr; }              /* phones */
+  .section { padding: 3.2rem 1.1rem; }
+}

@@ -1,0 +1,615 @@
+---
+title: "Tidyverse Other packages"
+author: "Dr. Md. Zulquar Nain"
+format: 
+  revealjs:
+    incremental: true
+    slide-number: c/t
+    theme: dark
+    preview-links: auto
+    chalkboard: 
+      boardmarker-width: 5
+editor: visual
+---
+
+## tidyr - Data Tidying {.scrollable}
+
+::: incremental
+-   A package in the Tidyverse for tidying data
+
+-   Helps convert data between wide and long formats
+
+-   Simplifies reshaping and cleaning datasets
+
+-   Key Functions in tidyr
+:::
+
+. . .
+
+### pivot_longer() {.incremental}
+
+Converting from Wide data *(multiple columns for the same variable)* to Long data *(one column for each variable)*
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+library(tidyr)
+  
+  data_wide <- tibble(
+    id = 1:3,
+    `2021` = c(100, 150, 200),
+    `2022` = c(110, 160, 210)
+  )
+  
+  data_long <- data_wide %>%
+    pivot_longer(cols = `2021`:`2022`, names_to = "year", values_to = "value")
+  
+  print(data_long)
+```
+
+### pivot_wider()
+
+Converting from Long to Wide Format
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+data_long <- tibble(
+  id = c(1, 1, 2, 2, 3, 3),
+  year = c("2021", "2022", "2021", "2022", "2021", "2022"),
+  value = c(100, 110, 150, 160, 200, 210)
+)
+
+data_wide <- data_long %>%
+  pivot_wider(names_from = year, values_from = value)
+
+print(data_wide)
+
+```
+
+### separate()
+
+Splits a single column into multiple columns
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+data <- tibble(name = c("John Doe", "Jane Smith", "Alice Johnson"))
+
+data_separated <- data %>%
+  separate(name, into = c("first_name", "last_name"), sep = " ")
+
+print(data_separated)
+```
+
+### unite()
+
+Combines multiple columns into one
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+data <- tibble(first_name = c("John", "Jane", "Alice"),
+               last_name = c("Doe", "Smith", "Johnson"))
+
+data_united <- data %>%
+  unite("full_name", first_name, last_name, sep = " ")
+
+print(data_united)
+```
+
+### drop_na()
+
+Removes rows with missing values
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+data <- tibble(x = c(1, NA, 3), y = c(4, 5, NA))
+
+data_clean <- data %>%
+  drop_na()
+
+print(data_clean)
+```
+
+### fill()
+
+Fills missing values using the previous or next available value
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+data <- tibble(x = c(1, NA, 3, NA, 5))
+
+data_filled <- data %>%
+  fill(x, .direction = "down")
+
+print(data_filled)
+```
+
+------------------------------------------------------------------------
+
+## tidyr vs dplyr
+
+-   **tidyr**: Specializes in reshaping and tidying data (e.g., pivot_longer(), pivot_wider(), separate()).
+
+-   **dplyr**: Specializes in data manipulation, such as subsetting, grouping, and summarizing (e.g., filter(), mutate(), summarize()).
+
+------------------------------------------------------------------------
+
+## readr - Data Import/Export {.scrollable}
+
+-   part of the tidyverse, focused on reading and writing rectangular data (e.g., CSV, TSV).
+
+-   Faster and more consistent than base R functions
+
+-   Makes data handling easy and efficient.
+
+-   Key Functions:
+
+. . .
+
+### read_csv()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+library(readr)
+data_csv <- read_csv("hsbraw.csv")
+head(data_csv)
+```
+
+### read_delim()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Read a pipe-separated file
+data_pipe <- read_delim("hsbraw.txt", delim = "|")
+head(data_pipe)
+```
+
+### write_csv()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Write a data frame to a CSV file
+write_csv(data, "hsbraw.csv")
+```
+
+### write_delim()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Write data to a pipe-separated file
+write_delim(data, "hsbraw.txt", delim = "|")
+```
+
+------------------------------------------------------------------------
+
+## purrr - Functional Programming {.scrollable}
+
+-   enhances R's functional programming capabilities by providing a consistent, simple way to apply functions to lists, vectors, and other data structures.
+
+-   Key function:-
+
+. . .
+
+### map()
+
+Applies a function to each element of a list and returns a list.
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+library(purrr)
+
+# Create a list of numbers
+numbers <- list(1, 2, 3, 4, 5)
+
+# Apply a function to square each number using map
+squared_numbers <- map(numbers, ~ .x^2)
+
+# Print the result
+squared_numbers
+
+```
+
+### map_dbl()
+
+To apply a function and return a vector (not a list), map_dbl() is used.
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Apply the same function, but return a vector of doubles
+squared_numbers_vector <- map_dbl(numbers, ~ .x^2)
+
+# Print the result
+squared_numbers_vector
+```
+
+### map2()
+
+-   Applies a function to two inputs simultaneously.
+
+-   useful when you need to operate on two lists.
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Create two lists
+list1 <- list(1, 2, 3)
+list2 <- list(10, 20, 30)
+
+# Use map2 to add corresponding elements
+sum_list <- map2(list1, list2, ~ .x + .y)
+
+# Print the result
+sum_list
+```
+
+### map_chr()
+
+Used to get a character vector instead of a numeric one.
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Create a list of numbers
+numbers2 <- list(1, 2, 3, 4)
+
+# Use map_chr to convert each number to a character string
+char_numbers <- map_chr(numbers2, ~ as.character(.x))
+
+# Print the result
+char_numbers
+```
+
+------------------------------------------------------------------------
+
+## purrr vs tidyr
+
+-   **purrr** is specifically focused on working with lists and vectors using functional programming techniques.
+
+-   **tidyr** is focused on reshaping data frames (long to wide format and vice versa), separating and combining columns.
+
+------------------------------------------------------------------------
+
+## tibble - Modern Data Frames {.scrollable}
+
+-   A modern version of a data frame.
+
+-   More robust and user-friendly than traditional data frames.
+
+-   Improved handling of large data sets
+
+. . .
+
+### Basic Tibble
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Create a basic tibble
+people_tibble <- tibble(
+  Name = c("John", "Alice", "Bob"),
+  Age = c(25, 30, 22),
+  Location = c("New York", "London", "Paris")
+)
+
+# Print the tibble
+people_tibble
+```
+
+### Tibble with Mixed Data Types
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Create a tibble with mixed data types
+mixed_tibble <- tibble(
+  Name = c("John", "Alice", "Bob"),
+  Age = c(25, 30, 22),
+  Is_Active = c(TRUE, FALSE, TRUE),
+  Height = c(5.9, 5.6, 6.1)
+)
+
+# Print the tibble
+mixed_tibble
+```
+
+------------------------------------------------------------------------
+
+### Tibble vs. Data Frame
+
+Data Frame
+
+::: incremental
+-   Displays all rows, which can be overwhelming with large datasets.
+-   Automatically converts character vectors to factors (unless specified otherwise).
+
+Tibble
+
+-   Only shows the first few rows, making it easier to handle large datasets.
+
+-   Does not convert character columns into factors by default, avoiding a common issue with data frames.
+:::
+
+------------------------------------------------------------------------
+
+## stringr - String manipulation {.scrollable}
+
+-   Provides simple functions for common text operations.
+
+-   Focuses on consistency and ease of use.
+
+-   Key Functions:-
+
+. . .
+
+### str_detect()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# checks if a pattern exists in the string
+library(stringr)
+text <- "Hello, world!"
+has_hello <- str_detect(text, "Hello")
+has_hello
+```
+
+### str_replace()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#replaces the first occurrence of a pattern with a new string
+text <- "I love R programming."
+new_text <- str_replace(text, "R", "Python")
+new_text
+```
+
+### str_replace_all()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# replaces all occurrences of a pattern
+text <- "The cat is on the mat. The cat is cute."
+new_text_all <- str_replace_all(text, "cat", "dog")
+new_text_all
+```
+
+### str_sub()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#extracts a substring from a string
+text <- "Hello, world!"
+substring <- str_sub(text, 1, 5)
+substring
+```
+
+### str_to_lower()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# converts all characters in the string to lowercase
+text <- "HELLO, WORLD!"
+lowercase_text <- str_to_lower(text)
+lowercase_text
+```
+
+### str_split()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#splits a string into a list by a specified delimiter 
+text <- "apple,banana,cherry"
+split_text <- str_split(text, ",")
+split_text
+```
+
+### str_length()
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+#returns the number of characters in the string
+text <- "Hello"
+string_length <- str_length(text)
+string_length
+```
+
+------------------------------------------------------------------------
+
+## lubridate {.scrollable}
+
+-   It makes working with date-times easier
+
+-   Provides functions to manipulate, parse, and format date-time data.
+
+-   Simplifies operations like extracting parts of date-time, arithmetic operations, and handling time zones.
+
+. . .
+
+### Parsing Dates
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+library(lubridate)
+# Parse a date in year-month-day format
+date1 <- ymd("2025-03-03")
+print(date1)
+```
+
+### Parsing Dates with Time
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Parse a date-time with time and time zone
+datetime1 <- ymd_hms("2025-03-03 12:30:45")
+print(datetime1)
+```
+
+### Extracting Date-Time Components
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Extract components from a date-time object
+year(datetime1)
+month(datetime1)
+day(datetime1)
+hour(datetime1)
+minute(datetime1)
+second(datetime1)
+```
+
+### Handling Time Intervals
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Define an interval
+start <- ymd_hms("2025-03-01 00:00:00")
+end <- ymd_hms("2025-03-05 23:59:59")
+interval1 <- interval(start, end)
+print(interval1)
+```
+
+------------------------------------------------------------------------
+
+## forcats - Working with Factors {.scrollable}
+
+-   Makes working with categorical variables easier.
+
+-   Provides tools to manipulate factors and handle tasks like reordering, renaming, and combining levels.
+
+-   Key functions :
+
+. . .
+
+### Creating Factors
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+library(forcats)
+# Create a factor from a vector
+categories <- c("Low", "High", "Medium", "Low", "High")
+factor_categories <- factor(categories)
+print(factor_categories)
+```
+
+### Reordering factor levels
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Reorder factor levels
+factor_ordered <- fct_reorder(factor_categories, c(3, 2, 1, 4, 5))
+print(factor_ordered)
+```
+
+### Changing Factor Levels
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Change factor levels
+new_factor <- fct_recode(factor_categories, "Very Low" = "Low", "Very High" = "High")
+print(new_factor)
+```
+
+### Combining Factor Levels
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Combine similar factor levels
+collapsed_factor <- fct_collapse(factor_categories, 
+                                 "Low/Medium" = c("Low", "Medium"),
+                                 "High" = "High")
+print(collapsed_factor)
+```
+
+### Working with Factor Levels
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+# Drop unused factor levels
+dropped_factor <- fct_drop(factor_categories)
+print(dropped_factor)
+```
+
+### Visualizing Factor Data
+
+```{r}
+#| echo: true
+#| output-location: fragment
+
+
+library(ggplot2)
+# Create a plot with reordered factor levels
+ggplot(mpg, aes(x = fct_rev(class))) + 
+  geom_bar() + 
+  labs(title = "Count of Cars by Class")
+```
+
+------------------------------------------------------------------------
+
+## forcats vs dplyr
+
+-   **forcats** works with factors used for modifying factor levels, whereas **dplyr** also provides some functions that manipulate factors (e.g., mutate() and factor()).
+
+-   **forcats**: Designed specifically for working with factors and making factor level manipulations easier.
+
+-   **dplyr**: While dplyr can work with factors, forcats is more specialized for factor-specific operations.
+
+------------------------------------------------------------------------
+
+## THANKS {.center}

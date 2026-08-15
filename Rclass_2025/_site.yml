@@ -1,0 +1,68 @@
+
+
+navbar:
+  title: ECM2073
+  left:
+  - text: Data
+    menu:
+    - text: Example data 1
+      href: example.xlsx
+    - text: Example data 2
+      href: hsbraw.csv
+   
+  - text: Slides
+    menu:
+    - text: Introduction to R
+      href: 25_lecture 1 Introduction to R.html
+    - text: House Setting Rules
+      href: 25_lecture 2 House Settings and Packages.html
+    - text: Basic Operators
+      href: 25_lecture 3_Basic Operators.html
+    - text: Structure and Types of Data
+      href: 25_Lecture 4 Data Types and Structure.html
+    - text: Importing and Exporting Data
+      href: 25_Lecture 5 Importing and Exporting.html
+    - text: Do it Yourslef
+      href: 25_Lecture 6 Re-cap and Case Studies.html
+    - text: Exploring the Data
+      href: 25_Lecture 7 Exploration of Data.html
+    - text: Visualization of Data
+      href: 25_Lecture-8-R-Base-Plot.html
+    - text: Basic Statistics
+      href: 25_Lecture 8 Descriptive statistics.html
+    - text: Ease of doing- World of Tidyverse
+      href: 25_Lecture 9 Tidyverse.html
+    - text: Extended world of Tidyverse
+      href: 25_Lecture 10 Tidyverse other packages.html
+    - text: Visualisation with `ggplot()`
+      href: 25_Lecture-11-Visualisation-with-GGPLOT.html
+    - text: Exploratory Data Analysis
+      href: 25_Lecture 12_EDA_example.html
+    - text: An example EDA in Quarto
+      href: 25_Lecture-15_Example EDA.qmd
+    - text: Writing in Quarto
+      href: 25_Lecture 13_Documentation with Quarto.html
+    - text: A sample for writing in Quarto
+      href: 25_Lecture-14_Quarto for Word format.qmd
+    - text: The output
+      href: 25_Lecture-14_Quarto for Word format.docx
+    - text: A sample for Final Project to be submitted
+      href: Final Project Sample.docx
+      
+  - text: Script files
+    menu:
+    - text: Script for DIY I
+      href: DIY I.R
+    
+  - text: Compiled Script Files
+    menu:
+    - text: Compiled report for DIY I
+      href: DIY-I.html
+   
+
+include:
+  - "DIY I.R"
+
+# NOTE: do not add a site-level `output:` block here. It overrides the
+# per-document output format, which breaks the two xaringan slide decks
+# (Lecture 8 R Base Plot, Lecture 11 ggplot2). Set the theme per document.

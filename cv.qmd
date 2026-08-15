@@ -1,0 +1,65 @@
+---
+title: "Curriculum Vitae"
+---
+
+```{r setup, include=FALSE}
+source("R/helpers.R")
+```
+
+[Download PDF version](cv.pdf){.btn-pill .btn-filled}
+
+## Education
+
+- **Ph.D. Economics**, University of Hyderabad, 2019<br>
+  *Dissertation:* Monetary Policy, Uncertainty, Inflation and Output in India<br>
+  *Supervisor:* Prof. Bandi Kamaiah
+- **MA Economics**, University of Hyderabad, 2010
+- **BA (Hons) Economics**, Aligarh Muslim University, 2008
+
+## Academic Appointments
+
+- **Assistant Professor**, Department of Economics, Aligarh Muslim University, Aligarh — 2018–present
+- **Assistant Professor**, Department of Economics, MANUU, Hyderabad — 2014–2018
+
+## Research Experience
+
+- **Research Fellow**, School of Economics, University of Hyderabad — 2011–2014
+- **Research Associate**, Ministry of Commerce & Industry, Govt. of India — 2010–2011
+
+## Scholarships & Awards
+
+```{r awards, results="asis"}
+print_awards()
+```
+
+## Workshops & Training
+
+```{r workshops, results="asis"}
+print_workshops()
+```
+
+## Academic / Administrative Service
+
+```{r service, results="asis"}
+print_service()
+```
+
+## Academic Affiliation
+
+```{r memberships, results="asis"}
+print_memberships()
+```
+
+## Skills
+
+```{r skills, results="asis"}
+print_skills()
+```
+
+## Contact
+
+Department of Economics, Faculty of Social Sciences
+Aligarh Muslim University, Aligarh, UP 202002, India
+Email: [zulquar.ec@amu.ac.in](mailto:zulquar.ec@amu.ac.in)
+
+*Referee details are available in the [PDF version of the CV](cv.pdf).*

@@ -1,0 +1,81 @@
+---
+title: Do it yourself
+author: Md Zulquar Nain
+institute: AMU
+date: last-modified
+date-format: long
+format: 
+  revealjs:
+    theme: night
+   # logo: imgages/logo.png 
+    incremental: true
+    scrollable: true
+    slide-number: true
+    show-slide-number: all
+    preview-links: auto
+  pdf: default
+editor: visual
+from: markdown+emoji
+---
+
+## Look Back\!:runner:
+
+-   create a `project folder`
+
+-   Save it by the name `SI`
+
+-   Create a `script file`
+
+-   Save and keep the name as your roll number
+
+-   Write your `name` in the script file
+  
+  
+  
+## Look Back\!:repeat_one:
+
+-   Compute $\sqrt{(4+12)}/\sqrt{(2+2)}$
+
+-   Create a vector named `y` which must contain 6 elements 
+
+-   Create a vector using three different methods
+
+-   Create a vector in descending order from 10 to 1 in steps of 0.5 and add an element to the vector.
+
+-   Find the length, maximum and minimum of the vector
+
+
+
+## Look Back\!:repeat_one:
+
+-   Create a vector of heights of five people sitting around you. 
+
+-   Change the value of the first and last elements of the above vector.
+
+-   Find the sum and product of first 20 natural numbers 
+
+-   Create a matrix of two columns and two row using `cbind` `rbind`
+
+-   Generate a third column by adding the first TWO columns
+
+## Lets Move \!:arrow_up:
+
+-  Create a character vector
+
+-  Create a vector of categorical data
+
+-  Import a csv and excel files with 5 columns and 10 rows
+
+-  Import a .txt file, consisting the details about the data in first five rows
+
+
+
+
+
+##  {background-image="images/w1.gif"}
+
+:::: r-fit-text
+::: center
+[**THANKS**]{style="color: red;"}
+:::
+::::

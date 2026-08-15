@@ -1,0 +1,198 @@
+---
+title: "Title of Document"
+author:
+  - "**Student Name**"
+  - 24ECM05
+date: "`r Sys.Date()`"
+format: 
+  docx:
+    toc: true
+    toc-depth: 3
+    toc-location: body
+    toc-title: Table of Contents
+    number-sections: true
+    highlight-style: github
+    theme: dark
+    fontsize: 12pt
+editor: visual
+---
+
+```{css, echo = FALSE}
+.justify {
+  text-align: justify !important
+}
+```
+
+{{< pagebreak >}}
+
+## Introduction
+
+Let me first talk about the structure of the project, then I will talk about writing about it in the **Quarto**. The project should include following sections.
+
+-   Introduction
+-   Literature Review
+-   Data and Methodology
+    -   Data
+    -   Methodology
+-   Results Analysis
+-   Conclusion
+-   References
+
+I am sharing sample papers to understand, what should go in these sections.
+
+## Writing in Quarto
+
+Now let me introduce different procedures needed to complete the project in **Qaurto**.
+
+-   First **YAML**
+
+In **YAML**, we include about the document information and formatting structure of the document. Here I have included bare minimum **YAML**, which will be sufficient to complete the project in a structured format.
+
+-   Inserting a link
+
+::: justify
+To include a link, you have two options. One where you want to display the full link then write like this <https://www.google.co.in/>. Remember the link should be in between the `<>` if you want to show a text instead of a full link and hide the link behind the text. Then write like this. To go to Google, click on the word [Google](https://www.google.co.in/).
+:::
+
+-   Different formats of texts
+
+To write a **bold text**, you have to the texts in between the symbols `** **,` and to write ***italic texts***, you have to write the texts in between the symbols `*** ***`.
+
+-   Bullet items and numbered items.
+
+First, to create bullet items you can use the symbol `*` or `-`. You must give space after the symbol and also have space between one bullet item to another. To create a sub-bullet, you have to shift the next bullet item towards the right. For example, see this list.
+
+-   item1
+
+-   item2
+
+    -   sub-item1
+
+    -   sub-item2
+
+-   Numbered items
+
+1.  item1
+
+2.  item2
+
+    i)  sub-item1
+
+    ii) sub-item2
+
+You may use the tab to create a sub-bullet(Use two tab spaces to create sub-numbered items).
+
+## Writing equations
+
+There are two types of equations you may need to insert in the document. One is known as an **inline equation,** such as $y = a + b$. The second is known as **Display equations,** such as
+
+$$
+y = \alpha + \beta x
+$$
+
+::: callout-warning
+## Note
+
+To write a display equation, use `$$` sign at the beginning of the equation and at the end of the equation, and there should not be any **space** after the `$$` sign and before the `$$` sign.
+:::
+
+To write a numbered equation, use a tag after the `$$` sign at the end of the equation like this.
+
+$$
+y = \alpha + \beta x
+$$ {#eq-one}
+
+::: callout-warning
+## Note
+
+The tag must be inside the curly bracket `{}` and start with `#eq,` and after `-` you can put any identification. For example, I have used the word **one**.
+:::
+
+In quarto, we use `LaTeX` language to write `mathematical symbols and equations`. To see the full list of `LaTeX` code, click [HERE](https://www.cmor-faculty.rice.edu/~heinken/latex/symbols.pdf).
+
+## Changing the colour of the text.
+
+You change the colour of the text by using the command `{style="color: red"}`. To make the colour of the text [blue]{style="color: blue"}, I have used `{style="color: blue"}`. Similarly, to use the color of the text [red]{style="color: red"}, I have used `{style="color: red"}`. The specific text of which you want to change the colour must be within `[]` and followed by the style.
+
+## Inserting code
+
+To insert the code chunk (group of codes), you have to use the **back quote (\`)**, just below the **twiddle/tilde (\~)** symbol. To insert a code chunk, in the beginning, put three \***back quote(\`\`\`)** symbols and at the end also put three **back quote(\`\`\`)** symbols.
+
+### Some examples
+
+Here we will import the data for further analysis.
+
+::: callout-warning
+## Note
+
+Another and easiest way to insert code chunk is to switch to the visual editor and from the insert tab click on the **executable cell** or use shortcut keys `Ctrl+Alt+I`.
+:::
+
+```{r}
+#| echo: false
+#| eval: true
+data <- read.csv("Data.csv")
+
+```
+
+In the above code chunk use `echo: false` will make sure that code is not printed in the document. However, `eval: true` makes this code executable that is data will be imported and stored in dataframe named `data`.
+
+Lets examine the data by using code `head()`.
+
+```{r}
+#| echo: false
+#| eval: true
+head(data,3)
+```
+
+The results will be printed in the document.
+
+Now lets make line graph of these variables.
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 6
+#| fig-height: 5
+#| fig-align: center
+#| fig-cap: "A Figure"
+#| fig-cap-location: bottom
+#| label: fig-line-plot
+plot(data$Year, data$SID,
+     type = "l",
+     lwd = 2, col = "red",
+     main = "Line graph",
+     ylab = "Values of HI",
+     xlab = "Year")
+```
+
+Here in the above code chunk `fig-width` and `fig-height` is for the width and height of the figure respectively. `fig-align` is for the alignment of figure, which is in center of the document width. Similarly `fig-caption` and `fig-cap-location` is respectively for the caption of the figure and position of caption. Here option `label` makes the figure cross-referenceable. Here we cross-reference the above figure like this, the @fig-line-plot shows overtime growth of HI.
+
+::: callout-warning
+## Note
+
+First to `lable` the figure command must start with `fig` and then after `-` name the graph/plot. For example here name is `line-plot`. Then use \@ followed by `fig-line-plot` to cross-reference the figure.
+:::
+
+```{r}
+#| label: tbl-des
+#| echo: false
+#| tbl-cap: "Descriptive Statistics"
+
+library(knitr)
+library(psych)
+subdata <- data[,c("HI","SID")]
+kable(describe(subdata, IQR=FALSE, ranges = FALSE))
+```
+
+Here `kable` is to make the table in the document. You can cross-reference the table as @tbl-des.
+
+## Final words
+
+This is a sample, you can explore further for the other options. You may find the complete list of option [HERE](https://quarto.org/docs/reference/formats/docx.html).
+
+::: callout-warning
+## Note
+
+Remaining formatting, you may do in the generated word file also.
+:::
