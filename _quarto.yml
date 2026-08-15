@@ -32,11 +32,17 @@ project:
     - "!Rclass_2025/_site/**"      # duplicate copy of the same deck (247 MB)
     - "!Rclass_2025/*.Rproj"
     - "!Rclass_2025/.Rhistory"
-    - "!cv/**"
-    - "!cvnain/**"
-    - "!data/**"
-    - "!R/**"
-    - "!guide/**"
+    # Leading "/" anchors these to the project root. Without it Quarto matches
+    # the pattern at any depth, so "!R/**" also excluded webR's own
+    # splicer-app/shinylive/webr/vfs/usr/lib/R/ — including base R's R.data.gz.
+    # The splicer app was published with 89 runtime files missing and hung on a
+    # spinner forever, with nothing in the browser console because R could not
+    # start at all. Keep every one of these anchored.
+    - "!/cv/**"
+    - "!/cvnain/**"
+    - "!/data/**"
+    - "!/R/**"
+    - "!/guide/**"
     # Inflation tracker: rendered by hand inside software/ (see the guide),
     # published here as finished output. tracker.css and the _files folder
     # are both referenced by the HTML — publishing the page without them
