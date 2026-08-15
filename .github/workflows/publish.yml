@@ -36,14 +36,17 @@ jobs:
         run: Rscript -e "install.packages(c('readxl','dplyr','glue','plotly','httr2','jsonlite','rvest','httr','tidyr','knitr','rmarkdown','shinylive'))"
 
       # splicer-app/ is generated, not committed. shinylive resolves the app's
-      # own packages (shiny, bslib, readxl, zoo, plotly, DT, writexl) straight
-      # from the webR repo, so they do NOT need installing on the runner.
+      # own packages (shiny, bslib, readxl, zoo, writexl) straight from the
+      # webR repo, so they do NOT need installing on the runner.
+      #
+      # The export is built from app-web.R, not app.R — see software/README.md.
+      # Only the files that feed the export belong in the cache key.
       - name: Cache Shinylive web assets
         uses: actions/cache@v4
         with:
           # shinylive stores the webR runtime under rappdirs::user_cache_dir("shinylive")
           path: ~/.cache/shinylive
-          key: shinylive-${{ runner.os }}-${{ hashFiles('software/app.R', 'software/build-shinylive.R') }}
+          key: shinylive-${{ runner.os }}-${{ hashFiles('software/app-web.R', 'software/splice-core.R', 'software/build-shinylive.R') }}
           restore-keys: |
             shinylive-${{ runner.os }}-
 

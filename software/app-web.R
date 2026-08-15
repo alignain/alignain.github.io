@@ -1,24 +1,30 @@
 # ============================================================
-# India Data Splicer — full desktop app.
+# India Data Splicer — Shinylive (browser) build.
 #
-# Joins Indian macro series published at different base years
-# (WPI, CPI, IIP, GDP old/new series, ...) into one continuous
-# series. Splicing logic, period parsing and the Notes text all
-# live in splice-core.R; this file is only the interface.
+# Same app as app.R over the same splice-core.R, with two
+# substitutions:
 #
-# Run with:  shiny::runApp("software")
+#   plotly  -> base graphics  (renderPlot)
+#   DT      -> renderTable
 #
-# This is the version to develop against. The website publishes
-# app-web.R instead — a lighter front end over the same core,
-# because plotly and DT are too heavy to ship to a browser as
-# WebAssembly. Keep the two in step when you change the UI.
+# Why: a Shinylive page has to download and install every R
+# package it uses as WebAssembly before it shows anything.
+# plotly and DT drag in ggplot2, stringi, data.table, httr,
+# rmarkdown and ~30 more — about 50 MB of package tarballs on
+# top of the 33 MB webR runtime. That never finished loading
+# on GitHub Pages. Without them the extra payload is ~5 MB.
+#
+# What is lost here: hover tooltips and zoom on the chart, and
+# search/sort/paging on the table. Everything else — parsing,
+# the three splicing methods, rebasing, both downloads — is
+# identical, because it all lives in splice-core.R.
+#
+# Not run directly: build-shinylive.R stages this file as app.R.
 # ============================================================
 
 library(shiny)
 library(bslib)
 library(readxl)
-library(plotly)
-library(DT)
 library(writexl)
 
 source("splice-core.R")
@@ -54,9 +60,11 @@ ui <- page_sidebar(
 
   navset_card_tab(
     nav_panel("Chart",
-      plotlyOutput("chart", height = "430px"),
+      plotOutput("chart", height = "430px"),
       uiOutput("factors_ui")),
-    nav_panel("Table", DTOutput("table")),
+    nav_panel("Table",
+      div(style = "max-height: 460px; overflow: auto;",
+          tableOutput("table"))),
     nav_panel("Notes", uiOutput("notes"))
   )
 )
@@ -132,24 +140,47 @@ server <- function(input, output, session) {
     list(lab = w$lab, mat = w$mat, series = round(s, 3), info = res$info)
   })
 
-  output$chart <- renderPlotly({
+  # Base-graphics stand-in for the plotly chart: dotted lines for each
+  # base series, one thick solid line for the spliced result. Periods
+  # are drawn on a categorical axis (1..n) so that irregular gaps in
+  # the data do not stretch the x scale, matching type = "category".
+  output$chart <- renderPlot({
     sp <- spliced()
-    p <- plot_ly()
-    for (j in seq_len(ncol(sp$mat))) {
-      p <- add_trace(p, x = sp$lab, y = sp$mat[, j], type = "scatter",
-                     mode = "lines", name = colnames(sp$mat)[j],
-                     line = list(dash = "dot", width = 1.6,
-                                 color = SERIES_PAL[(j - 1) %% length(SERIES_PAL) + 1]))
+    k <- ncol(sp$mat)
+    n <- length(sp$lab)
+    vals <- c(as.vector(sp$mat), sp$series)
+    vals <- vals[is.finite(vals)]
+    validate(need(length(vals) > 0, "The selected series contain no numeric values."))
+
+    ylim <- range(vals)
+    if (diff(ylim) == 0) ylim <- ylim + c(-1, 1)
+    cols <- SERIES_PAL[(seq_len(k) - 1) %% length(SERIES_PAL) + 1]
+
+    op <- par(mar = c(5.5, 4.5, 5, 1), bty = "n", las = 1,
+              mgp = c(3, 0.6, 0), cex.axis = 0.85)
+    on.exit(par(op), add = TRUE)
+
+    plot(NA, xlim = c(1, max(n, 2)), ylim = ylim,
+         xaxt = "n", xlab = "", ylab = "Index")
+
+    # Thin the period labels — a monthly series would otherwise
+    # print several hundred of them on top of each other.
+    at <- unique(round(seq(1, n, length.out = min(n, 12))))
+    axis(1, at = at, labels = sp$lab[at], las = 2, cex.axis = 0.8)
+    grid(nx = NA, ny = NULL, col = "#e6e6e6", lty = 1)
+
+    for (j in seq_len(k)) {
+      lines(seq_len(n), sp$mat[, j], lty = 3, lwd = 1.8, col = cols[j])
     }
-    p <- add_trace(p, x = sp$lab, y = sp$series, type = "scatter",
-                   mode = "lines", name = "Spliced",
-                   line = list(color = ACCENT, width = 3))
-    layout(p, hovermode = "x unified",
-           xaxis = list(title = "", type = "category"),
-           yaxis = list(title = "Index"),
-           legend = list(orientation = "h", x = 0, y = 1.12)) |>
-      config(displayModeBar = FALSE)
-  })
+    lines(seq_len(n), sp$series, lwd = 3, col = ACCENT)
+
+    # Legend sits in the top margin, where it cannot cover the series.
+    legend("top", inset = c(0, -0.20), xpd = NA, bty = "n",
+           ncol = min(3, k + 1), cex = 0.85,
+           legend = c(colnames(sp$mat), "Spliced"),
+           col = c(cols, ACCENT),
+           lty = c(rep(3, k), 1), lwd = c(rep(1.8, k), 3))
+  }, res = 96)
 
   output$factors_ui <- renderUI({
     txt <- factors_text(spliced()$info)
@@ -162,10 +193,9 @@ server <- function(input, output, session) {
     data.frame(period = sp$lab, sp$mat, spliced = sp$series, check.names = FALSE)
   })
 
-  output$table <- renderDT({
-    datatable(result_df(), rownames = FALSE,
-              options = list(pageLength = 25, scrollX = TRUE))
-  })
+  output$table <- renderTable(result_df(), rownames = FALSE, digits = 3,
+                              na = "", striped = TRUE, hover = TRUE,
+                              spacing = "xs", width = "100%")
 
   output$dl_csv <- downloadHandler(
     filename = function() "spliced_series.csv",
@@ -175,7 +205,13 @@ server <- function(input, output, session) {
     filename = function() "spliced_series.xlsx",
     content = function(f) writexl::write_xlsx(result_df(), f))
 
-  output$notes <- renderUI(HTML(notes_html()))
+  output$notes <- renderUI(HTML(paste0(notes_html(), "
+    <h5>About this browser version</h5>
+    <p>This page runs R itself inside your browser (WebAssembly) — nothing
+    you upload leaves your machine, and there is no server. To keep the
+    one-time download small, the chart here is a static image and the table
+    is plain; the splicing, rebasing and downloads are exactly the same as
+    in the desktop app.</p>")))
 }
 
 shinyApp(ui, server)
