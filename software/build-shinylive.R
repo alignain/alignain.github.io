@@ -24,6 +24,20 @@
 # large wasm package downloads exceed R's default 60s timeout
 options(timeout = 600)
 
+# Packages the browser app loads that are NOT already in the webR base
+# image. shinylive::export() decides what to ship by walking the dependency
+# tree of the packages installed on *this* machine, so anything missing here
+# is silently dropped from the export and the published app dies on startup
+# with no error in the console. Check before building rather than after
+# deploying — this is how zoo and writexl went missing once already.
+NEEDED <- c("zoo", "readxl", "writexl")
+
+missing <- NEEDED[!vapply(NEEDED, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing)) {
+  stop("not installed on this machine: ", paste(missing, collapse = ", "),
+       " — shinylive would omit them from the export. install.packages() them first.")
+}
+
 stage <- file.path(tempdir(), "splicer")
 unlink(stage, recursive = TRUE)   # never inherit files from an earlier run
 dir.create(stage, showWarnings = FALSE)
@@ -43,13 +57,26 @@ shinylive::export(stage, "splicer-app")
 # edit reintroduces plotly or DT, the export balloons and the page stops
 # loading, which is invisible until someone opens it. Fail the build here
 # instead.
+shipped <- list.files("splicer-app/shinylive/webr/packages")
+
 banned <- c("plotly", "DT", "ggplot2", "stringi")
-present <- intersect(banned, list.files("splicer-app/shinylive/webr/packages"))
+present <- intersect(banned, shipped)
 if (length(present)) {
   stop("app-web.R pulled in ", paste(present, collapse = ", "),
        " — these make the browser build too large to load. ",
        "Keep heavy packages in app.R only.")
 }
+
+# The other half of the NEEDED check above: installed locally is necessary
+# but not sufficient — confirm they actually made it into the export.
+dropped <- setdiff(NEEDED, shipped)
+if (length(dropped)) {
+  stop("shinylive did not export: ", paste(dropped, collapse = ", "),
+       " — the published app would fail to start. Check that they are ",
+       "installed and that app-web.R/splice-core.R still library() them.")
+}
+
+cat("Shipped", length(shipped), "packages:", paste(sort(shipped), collapse = ", "), "\n")
 
 payload <- sum(file.info(list.files("splicer-app", recursive = TRUE,
                                     full.names = TRUE))$size, na.rm = TRUE)

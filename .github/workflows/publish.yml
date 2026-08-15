@@ -32,15 +32,24 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Install R packages
-        run: Rscript -e "install.packages(c('readxl','dplyr','glue','plotly','httr2','jsonlite','rvest','httr','tidyr','knitr','rmarkdown','shinylive'))"
-
-      # splicer-app/ is generated, not committed. shinylive resolves the app's
-      # own packages (shiny, bslib, readxl, zoo, writexl) straight from the
-      # webR repo, so they do NOT need installing on the runner.
+      # Two groups here. The first renders the Quarto site; the second is
+      # what the browser app itself loads (see software/app-web.R and
+      # splice-core.R).
       #
-      # The export is built from app-web.R, not app.R — see software/README.md.
-      # Only the files that feed the export belong in the cache key.
+      # The app's own packages have to be installed even though the app runs
+      # in WebAssembly: shinylive::export() walks the dependency tree using
+      # the packages installed on *this* machine to decide what to ship. A
+      # package that is not installed here is silently left out of the export
+      # and the published app dies on startup — which is exactly what
+      # happened to zoo and writexl. build-shinylive.R now checks both ends.
+      - name: Install R packages
+        run: |
+          Rscript -e "install.packages(c('dplyr','glue','plotly','httr2','jsonlite','rvest','httr','tidyr','knitr','rmarkdown','shinylive'))"
+          Rscript -e "install.packages(c('shiny','bslib','readxl','zoo','writexl'))"
+
+      # splicer-app/ is generated, not committed. The export is built from
+      # app-web.R, not app.R — see software/README.md. Only the files that
+      # feed the export belong in the cache key.
       - name: Cache Shinylive web assets
         uses: actions/cache@v4
         with:
