@@ -38,10 +38,7 @@ jobs:
       #
       # The app's own packages have to be installed even though the app runs
       # in WebAssembly: shinylive::export() walks the dependency tree using
-      # the packages installed on *this* machine to decide what to ship. A
-      # package that is not installed here is silently left out of the export
-      # and the published app dies on startup — which is exactly what
-      # happened to zoo and writexl. build-shinylive.R now checks both ends,
+      # the packages installed on *this* machine to decide what to ship. R now checks both ends,
       # so a missing package fails the run instead of shipping a dead page.
       - name: Install R packages
         run: |

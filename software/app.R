@@ -1,7 +1,7 @@
 # ============================================================
-# India Data Splicer — the app.
+# Data Splicer — the app.
 #
-# Joins Indian macro series published at different base years
+# Joins series published at different base years
 # (WPI, CPI, IIP, GDP old/new series, ...) into one continuous
 # series. Splicing logic, period parsing and the Notes text all
 # live in splice-core.R; this file is only the interface.
@@ -24,8 +24,20 @@ source("splice-core.R")
 
 # ---------- UI ----------
 
+# Chromium (crbug 468227) does not route requests from an <a download> link
+# through a service worker. Shinylive serves the entire app from one, so the
+# download URL escapes to the real host — GitHub Pages — which 404s, and the
+# browser saves that 404 page as dl_csv.htm / dl_xlsx.htm. Dropping the
+# attribute leaves target="_blank"; Shiny's Content-Disposition header still
+# makes it a download, under the right filename. Harmless in Firefox.
+download_btn <- function(...) {
+  tag <- downloadButton(...)
+  tag$attribs$download <- NULL
+  tag
+}
+
 ui <- page_sidebar(
-  title = "India Data Splicer — join series across base-year changes",
+  title = "Data Splicer — join series across base-year changes",
   theme = bs_theme(version = 5, primary = ACCENT,
                    base_font = font_google("Inter", local = FALSE)),
   sidebar = sidebar(
@@ -47,8 +59,8 @@ ui <- page_sidebar(
     checkboxInput("rebase", "Rebase spliced series (= 100)", FALSE),
     uiOutput("base_picker"),
     hr(),
-    downloadButton("dl_csv", "Download CSV", class = "btn-sm"),
-    downloadButton("dl_xlsx", "Download Excel", class = "btn-sm")
+    download_btn("dl_csv", "Download CSV", class = "btn-sm"),
+    download_btn("dl_xlsx", "Download Excel", class = "btn-sm")
   ),
 
   navset_card_tab(

@@ -82,7 +82,8 @@ Account: <https://github.com/alignain>
    git add .
    git commit -m "Academic website"
    git branch -M main
-   git remote add origin https://github.com/alignain/alignain.github.io.git
+   
+   
    git push -u origin main
    ```
 3. On GitHub: **Settings → Pages → Source → GitHub Actions**. Nothing is

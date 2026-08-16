@@ -4,28 +4,9 @@
 # It sources splice-core.R for the splicing logic. This script stages both
 # and exports a Shinylive (WebAssembly) site to splicer-app/.
 #
-# There used to be a second, slimmed-down front end (app-web.R) published
-# in place of this one, on the belief that plotly and DT made the export
-# too large to load. That was a misdiagnosis and is worth recording so it
-# is not repeated. The published page hung because an unanchored "!R/**"
-# resource glob in _quarto.yml deleted webR's own vfs/usr/lib/R/ tree from
-# the _site copy (f1fadca), and because zoo/writexl were missing on the CI
-# runner (f543d7d). Size was never the blocker: measured side by side and
-# served locally, the full export reaches an interactive UI in about 6.5
-# seconds against the slim build's ~7. The extra packages cost download
-# bytes, not startup failure.
 #
-# What the full export does cost is ~45 MB more to pull down: 115 MB and
-# 46 packages, against 71 MB and 13. software.qmd offsets that by warming
-# R.wasm and library.data.gz on hover over the Launch button, so the click
-# lands on a populated cache.
 #
-# Do NOT try to shrink the export by deleting doc/help/translation
-# images from shinylive/webr/vfs/. This was tested: removing them saves
-# 14 MB and the app then dies on startup with "Can't download Emscripten
-# filesystem image metadata", because webR mounts every filesystem image
-# eagerly. Restoring the files into the same directory fixes it. The
-# runtime tree is all-or-nothing.
+#
 #
 # splicer-app/ is generated output and is NOT committed (see .gitignore);
 # the publish workflow re-runs this script before rendering the site.

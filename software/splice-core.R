@@ -1,5 +1,5 @@
 # ============================================================
-# India Data Splicer — shared core.
+# Data Splicer — shared core.
 #
 # Everything here is presentation-independent: period parsing,
 # the three splicing methods, the demo dataset, and the Notes
