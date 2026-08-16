@@ -3,13 +3,11 @@
 #
 # Everything here is presentation-independent: period parsing,
 # the three splicing methods, the demo dataset, and the Notes
-# copy. Both front ends source this file:
+# copy. app.R sources this file and supplies the interface
+# (plotly chart, DT table), both when run locally and when
+# build-shinylive.R exports it to WebAssembly.
 #
-#   app.R      full desktop app (plotly chart, DT table)
-#   app-web.R  slim build for Shinylive (base graphics, plain
-#              table) — see build-shinylive.R for why
-#
-# Fix a splicing bug once, here, and both get it.
+# Fix a splicing bug once, here, and every version gets it.
 #
 # Data format expected (CSV or Excel):
 #   - column 1: period  (YYYY, YYYY-MM, "Jan 2012", 2012 Q1, or a date)

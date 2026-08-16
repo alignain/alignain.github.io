@@ -1,24 +1,36 @@
 # Builds the browser version of the India Data Splicer.
 #
-# Two front ends share splice-core.R:
-#   app.R      the full desktop app (plotly + DT) — develop against this
-#   app-web.R  the slim build published here
+# app.R is the single front end: the full app, plotly chart and DT table.
+# It sources splice-core.R for the splicing logic. This script stages both
+# and exports a Shinylive (WebAssembly) site to splicer-app/.
 #
-# This script stages app-web.R *as* app.R alongside splice-core.R and
-# exports a Shinylive (WebAssembly) site to splicer-app/.
+# There used to be a second, slimmed-down front end (app-web.R) published
+# in place of this one, on the belief that plotly and DT made the export
+# too large to load. That was a misdiagnosis and is worth recording so it
+# is not repeated. The published page hung because an unanchored "!R/**"
+# resource glob in _quarto.yml deleted webR's own vfs/usr/lib/R/ tree from
+# the _site copy (f1fadca), and because zoo/writexl were missing on the CI
+# runner (f543d7d). Size was never the blocker: measured side by side and
+# served locally, the full export reaches an interactive UI in about 6.5
+# seconds against the slim build's ~7. The extra packages cost download
+# bytes, not startup failure.
 #
-# Why not export app.R directly: Shinylive ships every package the app
-# uses to the browser as WebAssembly, to be downloaded and installed
-# before the first pixel appears. plotly and DT pull in ggplot2,
-# stringi, data.table, httr, rmarkdown and about thirty more — roughly
-# 50 MB of package tarballs on top of the 33 MB webR runtime. The page
-# never finished loading on GitHub Pages. app-web.R needs ~5 MB of
-# packages instead.
+# What the full export does cost is ~45 MB more to pull down: 115 MB and
+# 46 packages, against 71 MB and 13. software.qmd offsets that by warming
+# R.wasm and library.data.gz on hover over the Launch button, so the click
+# lands on a populated cache.
+#
+# Do NOT try to shrink the export by deleting doc/help/translation
+# images from shinylive/webr/vfs/. This was tested: removing them saves
+# 14 MB and the app then dies on startup with "Can't download Emscripten
+# filesystem image metadata", because webR mounts every filesystem image
+# eagerly. Restoring the files into the same directory fixes it. The
+# runtime tree is all-or-nothing.
 #
 # splicer-app/ is generated output and is NOT committed (see .gitignore);
 # the publish workflow re-runs this script before rendering the site.
 #
-# Re-run after every edit to app-web.R or splice-core.R:
+# Re-run after every edit to app.R or splice-core.R:
 #   Rscript build-shinylive.R        (from the software/ folder)
 
 # large wasm package downloads exceed R's default 60s timeout
@@ -30,7 +42,7 @@ options(timeout = 600)
 # is silently dropped from the export and the published app dies on startup
 # with no error in the console. Check before building rather than after
 # deploying — this is how zoo and writexl went missing once already.
-NEEDED <- c("zoo", "readxl", "writexl")
+NEEDED <- c("zoo", "readxl", "writexl", "plotly", "DT")
 
 missing <- NEEDED[!vapply(NEEDED, requireNamespace, logical(1), quietly = TRUE)]
 if (length(missing)) {
@@ -47,25 +59,12 @@ dir.create(stage, showWarnings = FALSE)
 # splicer-app/ is generated output, there is nothing here to keep.
 unlink("splicer-app", recursive = TRUE)
 
-# shinylive requires the entry point to be called app.R
-stopifnot(file.copy("app-web.R", file.path(stage, "app.R"), overwrite = TRUE),
+stopifnot(file.copy("app.R", stage, overwrite = TRUE),
           file.copy("splice-core.R", stage, overwrite = TRUE))
 
 shinylive::export(stage, "splicer-app")
 
-# Guard against the heavy dependencies creeping back in: if a future
-# edit reintroduces plotly or DT, the export balloons and the page stops
-# loading, which is invisible until someone opens it. Fail the build here
-# instead.
 shipped <- list.files("splicer-app/shinylive/webr/packages")
-
-banned <- c("plotly", "DT", "ggplot2", "stringi")
-present <- intersect(banned, shipped)
-if (length(present)) {
-  stop("app-web.R pulled in ", paste(present, collapse = ", "),
-       " — these make the browser build too large to load. ",
-       "Keep heavy packages in app.R only.")
-}
 
 # The other half of the NEEDED check above: installed locally is necessary
 # but not sufficient — confirm they actually made it into the export.
@@ -73,7 +72,7 @@ dropped <- setdiff(NEEDED, shipped)
 if (length(dropped)) {
   stop("shinylive did not export: ", paste(dropped, collapse = ", "),
        " — the published app would fail to start. Check that they are ",
-       "installed and that app-web.R/splice-core.R still library() them.")
+       "installed and that app.R/splice-core.R still library() them.")
 }
 
 cat("Shipped", length(shipped), "packages:", paste(sort(shipped), collapse = ", "), "\n")

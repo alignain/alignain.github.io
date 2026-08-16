@@ -33,7 +33,7 @@ jobs:
           use-public-rspm: true
 
       # Two groups here. The first renders the Quarto site; the second is
-      # what the browser app itself loads (see software/app-web.R and
+      # what the browser app itself loads (see software/app.R and
       # splice-core.R).
       #
       # The app's own packages have to be installed even though the app runs
@@ -41,21 +41,21 @@ jobs:
       # the packages installed on *this* machine to decide what to ship. A
       # package that is not installed here is silently left out of the export
       # and the published app dies on startup — which is exactly what
-      # happened to zoo and writexl. build-shinylive.R now checks both ends.
+      # happened to zoo and writexl. build-shinylive.R now checks both ends,
+      # so a missing package fails the run instead of shipping a dead page.
       - name: Install R packages
         run: |
           Rscript -e "install.packages(c('dplyr','glue','plotly','httr2','jsonlite','rvest','httr','tidyr','knitr','rmarkdown','shinylive'))"
-          Rscript -e "install.packages(c('shiny','bslib','readxl','zoo','writexl'))"
+          Rscript -e "install.packages(c('shiny','bslib','readxl','zoo','writexl','DT'))"
 
-      # splicer-app/ is generated, not committed. The export is built from
-      # app-web.R, not app.R — see software/README.md. Only the files that
-      # feed the export belong in the cache key.
+      # splicer-app/ is generated, not committed. Only the files that feed
+      # the export belong in the cache key.
       - name: Cache Shinylive web assets
         uses: actions/cache@v4
         with:
           # shinylive stores the webR runtime under rappdirs::user_cache_dir("shinylive")
           path: ~/.cache/shinylive
-          key: shinylive-${{ runner.os }}-${{ hashFiles('software/app-web.R', 'software/splice-core.R', 'software/build-shinylive.R') }}
+          key: shinylive-${{ runner.os }}-${{ hashFiles('software/app.R', 'software/splice-core.R', 'software/build-shinylive.R') }}
           restore-keys: |
             shinylive-${{ runner.os }}-
 

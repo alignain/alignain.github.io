@@ -1,9 +1,9 @@
-# India Data Splicer
+# Data Splicer
 
 ## Inflation tracker
 
 `inflation-tracker.qmd` is a Quarto page that pulls live All-India CPI data from
-MoSPI's open API (no key needed) and renders headline trend, rural/urban split,
+MoSPI's open API and renders headline trend, rural/urban split,
 division-wise inflation, contributions to the headline rate, and a 2012-base
 historical view. Rebuild it any time with:
 
@@ -11,12 +11,12 @@ historical view. Rebuild it any time with:
 quarto render inflation-tracker.qmd
 ```
 
-(or the Render button in RStudio). Output: `inflation-tracker.html`,
+Output: `inflation-tracker.html`,
 self-contained. API pulls are cached in `data_cache/` — the current year
 refreshes after 12 hours; delete the folder to force a full re-download.
 New CPI data lands around the 12th of each month at 4 pm IST.
 
-A Shiny app to join Indian macro series published at different base years
+A Shiny app to join macro series published at different base years
 (WPI, IIP, CPI, GDP/GVA old vs new series, ...) into one continuous series.
 
 ## Files
@@ -24,21 +24,15 @@ A Shiny app to join Indian macro series published at different base years
 | file | what it is |
 |------|------------|
 | `splice-core.R` | period parsing, the three splicing methods, demo data, Notes copy — no UI |
-| `app.R` | full desktop app: plotly chart, DT table. Develop against this |
-| `app-web.R` | slim front end published on the website: base-graphics chart, plain table |
-| `build-shinylive.R` | stages `app-web.R` + `splice-core.R` and exports to `splicer-app/` |
+| `app.R` | the app: plotly chart, DT table. The one front end, run locally and published |
+| `build-shinylive.R` | stages `app.R` + `splice-core.R` and exports to `splicer-app/` |
 
-Both apps source `splice-core.R`, so a fix to the splicing logic lands in
-both. Only the presentation layer is duplicated — keep the two in step when
-you change the interface.
 
-**Why two front ends.** A Shinylive page ships every package the app uses to
-the browser as WebAssembly, and installs it there before showing anything.
-plotly and DT pull in ggplot2, stringi, data.table, httr, rmarkdown and about
-thirty more — ~50 MB of package tarballs on top of the 33 MB webR runtime.
-The published page never finished loading. `app-web.R` needs ~5 MB instead
-and starts in well under a minute. `build-shinylive.R` fails the build if a
-heavy package creeps back in.
+`app.R` sources `splice-core.R`, so the splicing logic lives in exactly one
+place and the desktop and browser versions can never drift apart.
+
+
+
 
 ## Run
 
@@ -100,11 +94,9 @@ Optional rebasing of the final series (chosen period = 100), chart
 ## Published version
 
 <https://alignain.github.io/software/splicer-app/> — built by the publish
-workflow from `app-web.R`. It runs R in the browser, so uploaded files never
-leave the visitor's machine and there is no server to pay for. The trade-off
-is a one-time download of the R runtime on first visit, and a static chart
-and plain table instead of plotly/DT.
+workflow from `app.R`, plotly chart and DT table included. It runs R in the
+browser, so uploaded files never leave the visitor's machine and there is no
+server to pay for. The trade-off is a one-time download of the R runtime on
+first visit.
 
-If the interactive chart and table matter more than the load time, the
-alternative is **shinyapps.io** (free tier): `rsconnect::deployApp("software")`
-deploys `app.R` unchanged, and the website would link out to it instead.
+

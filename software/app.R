@@ -1,5 +1,5 @@
 # ============================================================
-# India Data Splicer — full desktop app.
+# India Data Splicer — the app.
 #
 # Joins Indian macro series published at different base years
 # (WPI, CPI, IIP, GDP old/new series, ...) into one continuous
@@ -8,10 +8,9 @@
 #
 # Run with:  shiny::runApp("software")
 #
-# This is the version to develop against. The website publishes
-# app-web.R instead — a lighter front end over the same core,
-# because plotly and DT are too heavy to ship to a browser as
-# WebAssembly. Keep the two in step when you change the UI.
+# This same file is what the website publishes: build-shinylive.R
+# exports it to WebAssembly, plotly and DT included. There is no
+# separate web front end to keep in step.
 # ============================================================
 
 library(shiny)
