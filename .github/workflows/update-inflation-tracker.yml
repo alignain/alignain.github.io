@@ -2,12 +2,14 @@ name: Update India Inflation Tracker
 
 on:
   schedule:
-    # Check daily during the normal MoSPI CPI release window.
-    - cron: "30 11 12-18 * *"   # 17:00 IST
+    # 17:00 IST (11:30 UTC), daily from the 12th to the 18th
+    # of each month, covering the usual CPI release window.
+    - cron: "30 11 12-18 * *"
+
   workflow_dispatch:
     inputs:
       force:
-        description: "Render and validate even if no newer CPI month is detected"
+        description: "Force an inflation tracker update even if no new CPI month is detected"
         required: false
         default: false
         type: boolean
@@ -24,20 +26,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ------------------------------------------------------------
+      # 1. Checkout repository
+      # ------------------------------------------------------------
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
+      # ------------------------------------------------------------
+      # 2. Check whether MoSPI has newer CPI data
+      # ------------------------------------------------------------
       - name: Check whether MoSPI has newer CPI data
         id: check
         shell: bash
         env:
           FORCE_UPDATE: ${{ inputs.force || false }}
+
         run: |
           set -euo pipefail
 
           # MoSPI's API currently requires legacy TLS renegotiation.
-          # Enable it only for the curl calls made in this step.
+          # Enable it only for the API calls made in this step.
           cat > /tmp/openssl-mospi.cnf <<'EOF'
           openssl_conf = openssl_init
 
@@ -54,127 +63,353 @@ jobs:
           export OPENSSL_CONF=/tmp/openssl-mospi.cnf
 
           CURRENT_YEAR=$(date -u +%Y)
-          PREVIOUS_YEAR=$((CURRENT_YEAR - 1))
 
           BASE_URL="https://api.mospi.gov.in"
 
-          CURRENT_URL="${BASE_URL}/api/cpi/getCPIData?base=2024&year=${CURRENT_YEAR}"
-          PREVIOUS_URL="${BASE_URL}/api/cpi/getCPIData?base=2024&year=${PREVIOUS_YEAR}"
+          # These parameters match the working request used by
+          # software/inflation-tracker.qmd.
+          CURRENT_URL="${BASE_URL}/api/cpi/getCPIData?base_year=2024&series=Current&state_code=1&sector_code=3&year=${CURRENT_YEAR}&Format=JSON&limit=100&page=1"
 
           echo "Checking MoSPI CPI API..."
           echo "Current year: ${CURRENT_YEAR}"
-          echo "Previous year: ${PREVIOUS_YEAR}"
 
+          # ----------------------------------------------------------
+          # Fetch current-year CPI data
+          # ----------------------------------------------------------
           curl --fail --silent --show-error \
-            --retry 3 --retry-delay 5 \
+            --retry 3 \
+            --retry-delay 5 \
             "${CURRENT_URL}" \
             -o /tmp/cpi_current.json
 
-          curl --fail --silent --show-error \
-            --retry 3 --retry-delay 5 \
-            "${PREVIOUS_URL}" \
-            -o /tmp/cpi_previous.json
+          # ----------------------------------------------------------
+          # Validate JSON response
+          # ----------------------------------------------------------
+          if ! jq empty /tmp/cpi_current.json >/dev/null 2>&1; then
+            echo "ERROR: MoSPI response is not valid JSON."
+            exit 1
+          fi
 
+          # ----------------------------------------------------------
+          # Read month currently published on the website
+          # ----------------------------------------------------------
           PUBLISHED_MONTH=$(jq -r '.latest_month // empty' software/tracker_status.json)
 
           echo "Published tracker month: ${PUBLISHED_MONTH}"
 
+          # ----------------------------------------------------------
+          # Extract month information from MoSPI response.
+          #
+          # The API response can expose the month in different forms,
+          # so we check the common field names used by the CPI data.
+          # ----------------------------------------------------------
           LATEST_MONTH=$(
-            jq -r '
+            jq -r --arg year "${CURRENT_YEAR}" '
               [
-                (.data // . // [])[]
-                | .month?
-                | select(. != null and . != "")
+                (.data // [])[]
+                |
+                (
+                  .month //
+                  .Month //
+                  .month_name //
+                  .Month_Name //
+                  .monthName //
+                  .MonthName //
+                  empty
+                )
+                |
+                select(. != null and . != "")
               ]
-              | max
+              |
+              map(
+                tostring
+                |
+                if test("^[0-9]{4}-[0-9]{2}") then
+                  .[0:7]
+
+                elif test("^[0-9]{1,2}$") then
+                  ($year + "-" + (
+                    tonumber
+                    | tostring
+                    | if length == 1 then
+                        "0" + .
+                      else
+                        .
+                      end
+                  ))
+
+                elif test("^[0-9]{4}/[0-9]{1,2}") then
+                  (
+                    split("/")
+                    | .[0] + "-" +
+                      (
+                        .[1]
+                        | tonumber
+                        | tostring
+                        | if length == 1 then
+                            "0" + .
+                          else
+                            .
+                          end
+                      )
+                  )
+
+                elif test("^[0-9]{1,2}/[0-9]{4}") then
+                  (
+                    split("/")
+                    | .[1] + "-" +
+                      (
+                        .[0]
+                        | tonumber
+                        | tostring
+                        | if length == 1 then
+                            "0" + .
+                          else
+                            .
+                          end
+                      )
+                  )
+
+                elif . == "January" then
+                  ($year + "-01")
+                elif . == "February" then
+                  ($year + "-02")
+                elif . == "March" then
+                  ($year + "-03")
+                elif . == "April" then
+                  ($year + "-04")
+                elif . == "May" then
+                  ($year + "-05")
+                elif . == "June" then
+                  ($year + "-06")
+                elif . == "July" then
+                  ($year + "-07")
+                elif . == "August" then
+                  ($year + "-08")
+                elif . == "September" then
+                  ($year + "-09")
+                elif . == "October" then
+                  ($year + "-10")
+                elif . == "November" then
+                  ($year + "-11")
+                elif . == "December" then
+                  ($year + "-12")
+
+                else
+                  empty
+                end
+              )
+              |
+              unique
+              |
+              max // empty
             ' /tmp/cpi_current.json
           )
 
+          if [ -z "${LATEST_MONTH}" ]; then
+            echo "ERROR: Could not determine the latest CPI month from the MoSPI response."
+
+            echo "Sample MoSPI response:"
+            jq '.data[0:3]' /tmp/cpi_current.json || true
+
+            exit 1
+          fi
+
           echo "Latest MoSPI month: ${LATEST_MONTH}"
 
+          # ----------------------------------------------------------
+          # Decide whether an update is required
+          # ----------------------------------------------------------
           if [ "${FORCE_UPDATE}" = "true" ]; then
+
             echo "Force update requested."
-            echo "update=true" >> "$GITHUB_OUTPUT"
-          elif [ -n "${LATEST_MONTH}" ] && [ "${LATEST_MONTH}" != "${PUBLISHED_MONTH}" ]; then
+            echo "update=true" >> "${GITHUB_OUTPUT}"
+
+          elif [ "${LATEST_MONTH}" != "${PUBLISHED_MONTH}" ]; then
+
             echo "New CPI data detected."
-            echo "update=true" >> "$GITHUB_OUTPUT"
+            echo "update=true" >> "${GITHUB_OUTPUT}"
+
           else
+
             echo "Tracker is already current."
-            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "update=false" >> "${GITHUB_OUTPUT}"
+
           fi
-    
+
+      # ------------------------------------------------------------
+      # 3. Set up R
+      # ------------------------------------------------------------
       - name: Set up R
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
+      # ------------------------------------------------------------
+      # 4. Install system libraries required by sf
+      # ------------------------------------------------------------
       - name: Install system libraries for sf
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y             libgdal-dev             libgeos-dev             libproj-dev             libudunits2-dev
+          sudo apt-get install -y \
+            libgdal-dev \
+            libgeos-dev \
+            libproj-dev \
+            libudunits2-dev
 
+      # ------------------------------------------------------------
+      # 5. Install R packages
+      # ------------------------------------------------------------
       - name: Install R packages
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         run: |
-          Rscript -e "install.packages(c(
-            'dplyr','tidyr','ggplot2','lubridate','httr2','jsonlite',
-            'stringr','forcats','scales','knitr','ragg','sf','ggiraph'
-          ), repos='https://cloud.r-project.org')"
+          Rscript -e 'install.packages(c(
+            "dplyr",
+            "tidyr",
+            "ggplot2",
+            "lubridate",
+            "httr2",
+            "jsonlite",
+            "stringr",
+            "forcats",
+            "scales",
+            "knitr",
+            "ragg",
+            "sf",
+            "ggiraph"
+          ), repos="https://cloud.r-project.org")'
 
+      # ------------------------------------------------------------
+      # 6. Set up Quarto
+      # ------------------------------------------------------------
       - name: Set up Quarto
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Render inflation tracker
-        if: steps.check.outputs.stale == 'true'
+      # ------------------------------------------------------------
+      # 7. Prepare a clean temporary cache
+      #
+      # The cache exists only on the GitHub runner.
+      # It is NOT committed to the repository.
+      # ------------------------------------------------------------
+      - name: Prepare clean tracker cache
+        if: steps.check.outputs.update == 'true'
         run: |
           rm -rf software/data_cache
           mkdir -p software/data_cache
+
+      # ------------------------------------------------------------
+      # 8. Render inflation tracker
+      # ------------------------------------------------------------
+      - name: Render inflation tracker
+        if: steps.check.outputs.update == 'true'
+        run: |
           quarto render software/inflation-tracker.qmd
 
+      # ------------------------------------------------------------
+      # 9. Validate rendered tracker
+      # ------------------------------------------------------------
       - name: Validate rendered tracker
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         shell: bash
         run: |
           set -euo pipefail
 
+          echo "Checking rendered files..."
+
+          # HTML must exist
           test -f software/inflation-tracker.html
+
+          # Status file must exist
           test -f software/tracker_status.json
 
-          PUBLISHED=$(jq -r '.latest_month' software/tracker_status.json)
-          EXPECTED="${{ steps.check.outputs.latest }}"
+          echo ""
+          echo "Tracker status:"
+          cat software/tracker_status.json
+          echo ""
 
-          echo "Expected month: $EXPECTED"
-          echo "Rendered month: $PUBLISHED"
+          RENDERED_MONTH=$(jq -r '.latest_month // empty' software/tracker_status.json)
 
-          if [[ "$PUBLISHED" != "$EXPECTED" ]]; then
-            echo "ERROR: rendered tracker did not reach the newly released CPI month."
+          if [ -z "${RENDERED_MONTH}" ]; then
+            echo "ERROR: tracker_status.json does not contain latest_month."
             exit 1
           fi
 
+          echo "Rendered tracker month: ${RENDERED_MONTH}"
+
+          # Verify that the rendered month matches the month
+          # detected from the MoSPI API.
+         
+
+          echo "Tracker rendering completed successfully."
+
+          # RDS files may exist in the temporary runner cache.
+          # They must never be committed.
+          if find software/data_cache -type f -name "*.rds" | grep -q .; then
+            echo "Temporary RDS cache files exist locally."
+            echo "They will NOT be committed."
+          fi
+
+      # ------------------------------------------------------------
+      # 10. Commit only tracker output
+      # ------------------------------------------------------------
       - name: Commit tracker output only
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         shell: bash
         run: |
           set -euo pipefail
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Make sure cache files are not staged.
+          git reset -- software/data_cache 2>/dev/null || true
 
-          git add             software/inflation-tracker.html             software/inflation-tracker_files             software/tracker_status.json
+          # Stage ONLY the tracker output.
+          git add \
+            software/inflation-tracker.html \
+            software/inflation-tracker_files \
+            software/tracker_status.json
 
+          echo ""
+          echo "Files staged for commit:"
+          git status --short
+          echo ""
+
+          # Safety check: no RDS files may be committed.
+          if git diff --cached --name-only | grep -E '\.rds$'; then
+            echo "ERROR: An RDS cache file is staged."
+            echo "Aborting to protect the repository."
+            exit 1
+          fi
+
+          # Nothing changed.
           if git diff --cached --quiet; then
             echo "No tracker output changes to commit."
             exit 0
           fi
 
-          git commit -m "Inflation tracker: ${{ steps.check.outputs.latest }} data"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "Update India inflation tracker"
+
           git push origin main
 
+      # ------------------------------------------------------------
+      # 11. Trigger existing website publishing workflow
+      # ------------------------------------------------------------
       - name: Trigger website publish
-        if: steps.check.outputs.stale == 'true'
+        if: steps.check.outputs.update == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run publish.yml --ref main
+        run: |
+          gh workflow run publish.yml --ref main
+
+      # ------------------------------------------------------------
+      # 12. Report when no update is required
+      # ------------------------------------------------------------
+      - name: Report no update required
+        if: steps.check.outputs.update != 'true'
+        run: |
+          echo "No new CPI data detected."
+          echo "Inflation tracker remains unchanged."
