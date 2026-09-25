@@ -5,7 +5,7 @@ name: Check for new CPI data
 #
 # It deliberately does NOT render or publish anything. The tracker needs
 # sf/GDAL and draws a map worth looking at before it goes live, so the
-# rebuild stays a manual step. This job only
+# rebuild stays a manual step (see the maintenance guide). This job only
 # does the remembering.
 
 on:

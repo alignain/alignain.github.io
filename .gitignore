@@ -14,12 +14,17 @@
 # Excel writes these next to a workbook while it is open
 ~$*
 
-# The maintenance guide (LaTeX source, built PDF and pdflatex scratch files)
-# is written for whoever runs this site, not for anyone reading the repo, so
-# none of it is pushed. Kept on disk — see guide/ locally. The whole folder is
-# ignored rather than just the scratch files, so recompiling never re-adds the
-# .tex or the .pdf.
-/guide/
+# pdflatex scratch files for the maintenance guide. The .tex and the built
+# .pdf are both committed; these four are rewritten on every compile and are
+# useless to anyone else. Scoped to /guide/ on purpose — it is the only
+# hand-run LaTeX project here, and a bare *.log would swallow unrelated logs.
+/guide/*.aux
+/guide/*.log
+/guide/*.out
+/guide/*.toc
+/guide/*.fls
+/guide/*.fdb_latexmk
+/guide/*.synctex.gz
 
 # Everything that is not needed to build or host the site now lives here —
 # the legacy cv/ project, the duplicate deck render, and R session junk.

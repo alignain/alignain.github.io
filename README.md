@@ -22,17 +22,18 @@ Workflow after editing the Excel file:
 2. Re-render the site: `quarto render` (or Render in RStudio).
 3. Push to GitHub — done.
 
-To feature specific papers on the homepage, add `YES` in the `selected` column to
-the `publications` sheet; otherwise the three most recent articles are shown.
+To feature specific papers on the homepage, add a `selected` column to
+the `publications` sheet and put `YES` on up to three rows; otherwise
+the three most recent articles are shown.
 
 The few things NOT in the Excel file (they rarely change) are edited
 directly in the pages: hero text and research-interest cards
 (`index.qmd`), education/appointments (`cv.qmd`), the teaching intro
 (`teaching.qmd`).
 
-
-`data/mospi_cache.csv` is kept as the offline cache for the homepage
-Data corner chart.
+`data/academic_data.xlsx` is **no longer used** and can be deleted;
+`data/wdi_cache.csv` is kept as the offline cache for the homepage
+World Bank chart.
 
 ## How everything is wired
 
@@ -82,8 +83,7 @@ Account: <https://github.com/alignain>
    git add .
    git commit -m "Academic website"
    git branch -M main
-   
-   
+   git remote add origin https://github.com/alignain/alignain.github.io.git
    git push -u origin main
    ```
 3. On GitHub: **Settings → Pages → Source → GitHub Actions**. Nothing is

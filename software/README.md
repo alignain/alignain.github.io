@@ -1,9 +1,9 @@
-# Data Splicer
+# India Data Splicer
 
 ## Inflation tracker
 
 `inflation-tracker.qmd` is a Quarto page that pulls live All-India CPI data from
-MoSPI's open API and renders headline trend, rural/urban split,
+MoSPI's open API (no key needed) and renders headline trend, rural/urban split,
 division-wise inflation, contributions to the headline rate, and a 2012-base
 historical view. Rebuild it any time with:
 
@@ -11,50 +11,20 @@ historical view. Rebuild it any time with:
 quarto render inflation-tracker.qmd
 ```
 
-Output: `inflation-tracker.html`,
+(or the Render button in RStudio). Output: `inflation-tracker.html`,
 self-contained. API pulls are cached in `data_cache/` — the current year
 refreshes after 12 hours; delete the folder to force a full re-download.
 New CPI data lands around the 12th of each month at 4 pm IST.
 
-A Shiny app to join macro series published at different base years
+A Shiny app to join Indian macro series published at different base years
 (WPI, IIP, CPI, GDP/GVA old vs new series, ...) into one continuous series.
-
-## Files
-
-| file | what it is |
-|------|------------|
-| `splice-core.R` | period parsing, the three splicing methods, demo data, Notes copy — no UI |
-| `app.R` | the app: plotly chart, DT table. The one front end, run locally and published |
-| `build-shinylive.R` | stages `app.R` + `splice-core.R` and exports to `splicer-app/` |
-
-
-`app.R` sources `splice-core.R`, so the splicing logic lives in exactly one
-place and the desktop and browser versions can never drift apart.
-
-
-
 
 ## Run
 
 From R / RStudio:
 
 ```r
-shiny::runApp("software")          # full app, from the repo root
-```
-
-To rebuild the browser version (the publish workflow does this automatically
-on every push):
-
-```
-cd software
-Rscript build-shinylive.R
-```
-
-Then serve `splicer-app/` over http to test it — Shinylive needs a real
-server, opening `index.html` from disk will not work:
-
-```r
-httpuv::runStaticServer(dir = "software/splicer-app", port = 8765)
+shiny::runApp("C:/Users/Abc/Desktop/india-splicer")
 ```
 
 ## Data format
@@ -91,12 +61,9 @@ not official statistics).
 Optional rebasing of the final series (chosen period = 100), chart
 (originals dotted, spliced solid), full table, CSV/Excel download.
 
-## Published version
+## Deploying later (optional)
 
-<https://alignain.github.io/software/splicer-app/> — built by the publish
-workflow from `app.R`, plotly chart and DT table included. It runs R in the
-browser, so uploaded files never leave the visitor's machine and there is no
-server to pay for. The trade-off is a one-time download of the R runtime on
-first visit.
-
-
+- **shinyapps.io** (free tier): `rsconnect::deployApp("C:/Users/Abc/Desktop/india-splicer")`
+  after creating an account and pasting your token.
+- Or embed a serverless version in the Quarto website via **Shinylive**
+  (`shinylive` R package) — ask Claude to convert it when needed.
