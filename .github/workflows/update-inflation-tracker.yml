@@ -276,6 +276,7 @@ jobs:
             "forcats",
             "scales",
             "knitr",
+            "rmarkdown",
             "ragg",
             "sf",
             "ggiraph"
