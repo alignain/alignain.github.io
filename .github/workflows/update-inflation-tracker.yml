@@ -117,50 +117,50 @@ jobs:
             libproj-dev \
             libudunits2-dev
 
-      - name: Install R packages
-        if: steps.check.outputs.update == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
+        - name: Install R packages
+          if: steps.check.outputs.update == 'true'
+          shell: bash
+          run: |
+            set -euo pipefail
 
-          Rscript -e '
-            options(repos = c(CRAN = "https://cloud.r-project.org"))
+            Rscript -e '
+              options(repos = c(CRAN = "https://cloud.r-project.org"))
 
-            packages <- c(
-              "dplyr",
-              "tidyr",
-              "ggplot2",
-              "lubridate",
-              "httr2",
-              "jsonlite",
-              "stringr",
-              "forcats",
-              "scales",
-              "knitr",
-              "rmarkdown",
-              "ragg",
-              "sf",
-              "ggiraph"
-            )
+              packages <- c(
+                "dplyr",
+                "tidyr",
+                "ggplot2",
+                "lubridate",
+                "httr2",
+                "jsonlite",
+                "stringr",
+                "forcats",
+                "scales",
+                "knitr",
+                "rmarkdown",
+                "ragg",
+                "sf",
+                "ggiraph"
+              )
 
-            install.packages(
-              packages,
-              dependencies = TRUE
-            )
+              install.packages(
+                packages,
+                dependencies = c("Depends", "Imports", "LinkingTo")
+              )
 
-            for (pkg in packages) {
-              if (!requireNamespace(pkg, quietly = TRUE)) {
-                stop("Package not installed: ", pkg)
+              for (pkg in packages) {
+                if (!requireNamespace(pkg, quietly = TRUE)) {
+                  stop("Package not installed: ", pkg)
+                }
               }
-            }
 
-            message(
-              "rmarkdown version: ",
-              as.character(packageVersion("rmarkdown"))
-            )
+              message(
+                "rmarkdown version: ",
+                as.character(packageVersion("rmarkdown"))
+              )
 
-            message("All required R packages are installed.")
-          '
+              message("All required R packages are installed.")
+            '    
 
       - name: Set up Quarto
         if: steps.check.outputs.update == 'true'
