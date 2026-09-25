@@ -262,7 +262,7 @@ jobs:
       # ------------------------------------------------------------
       # 5. Install R packages
       # ------------------------------------------------------------
-      - name: Install R packages
+           - name: Install R packages
         if: steps.check.outputs.update == 'true'
         run: |
           Rscript -e 'install.packages(c(
@@ -276,12 +276,14 @@ jobs:
             "forcats",
             "scales",
             "knitr",
-            "rmarkdown",
             "ragg",
             "sf",
             "ggiraph"
           ), repos="https://cloud.r-project.org")'
 
+          Rscript -e 'install.packages("rmarkdown", repos="https://cloud.r-project.org")'
+
+          Rscript -e 'library(rmarkdown); packageVersion("rmarkdown")'
       # ------------------------------------------------------------
       # 6. Set up Quarto
       # ------------------------------------------------------------
