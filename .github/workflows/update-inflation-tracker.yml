@@ -28,57 +28,81 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Check whether MoSPI has newer CPI data
         id: check
         shell: bash
+        env:
+          FORCE_UPDATE: ${{ inputs.force || false }}
         run: |
           set -euo pipefail
 
-          STATUS_FILE="software/tracker_status.json"
-          PUBLISHED=$(jq -r '.latest_month' "$STATUS_FILE")
-          echo "Published tracker month: $PUBLISHED"
+          # MoSPI's API currently requires legacy TLS renegotiation.
+          # Enable it only for the curl calls made in this step.
+          cat > /tmp/openssl-mospi.cnf <<'EOF'
+          openssl_conf = openssl_init
 
-          YEAR=$(date -u +%Y)
-          PREV=$((YEAR - 1))
-          LATEST=""
+          [openssl_init]
+          ssl_conf = ssl_sect
 
-          for Y in "$YEAR" "$PREV"; do
-            RESP=$(curl -sS --max-time 60 --retry 3 --retry-delay 5 -G               "https://api.mospi.gov.in/api/cpi/getCPIData"               --data-urlencode "base_year=2024"               --data-urlencode "series=Current"               --data-urlencode "state_code=1"               --data-urlencode "sector_code=3"               --data-urlencode "division_code=0"               --data-urlencode "year=$Y"               --data-urlencode "Format=JSON"               --data-urlencode "limit=100"               --data-urlencode "page=1")
+          [ssl_sect]
+          system_default = system_default_sect
 
-            FOUND=$(echo "$RESP" | jq -r '
-              (.data // [])
-              | map(select(.inflation != null and .inflation != ""))
-              | map((.year|tostring) + "-" + (
-                  {January:"01",February:"02",March:"03",April:"04",
-                   May:"05",June:"06",July:"07",August:"08",
-                   September:"09",October:"10",November:"11",December:"12"}[.month] // "00"))
-              | map(select(endswith("-00") | not))
-              | sort | last // empty')
+          [system_default_sect]
+          Options = UnsafeLegacyServerConnect
+          EOF
 
-            if [ -n "$FOUND" ]; then
-              LATEST="$FOUND"
-              break
-            fi
-          done
+          export OPENSSL_CONF=/tmp/openssl-mospi.cnf
 
-          if [ -z "$LATEST" ]; then
-            echo "Could not determine MoSPI's latest CPI month."
-            exit 1
-          fi
+          CURRENT_YEAR=$(date -u +%Y)
+          PREVIOUS_YEAR=$((CURRENT_YEAR - 1))
 
-          echo "MoSPI latest month: $LATEST"
+          BASE_URL="https://api.mospi.gov.in"
 
-          FORCE="${{ inputs.force || false }}"
+          CURRENT_URL="${BASE_URL}/api/cpi/getCPIData?base=2024&year=${CURRENT_YEAR}"
+          PREVIOUS_URL="${BASE_URL}/api/cpi/getCPIData?base=2024&year=${PREVIOUS_YEAR}"
 
-          if [[ "$LATEST" > "$PUBLISHED" || "$FORCE" == "true" ]]; then
-            echo "stale=true" >> "$GITHUB_OUTPUT"
-            echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Checking MoSPI CPI API..."
+          echo "Current year: ${CURRENT_YEAR}"
+          echo "Previous year: ${PREVIOUS_YEAR}"
+
+          curl --fail --silent --show-error \
+            --retry 3 --retry-delay 5 \
+            "${CURRENT_URL}" \
+            -o /tmp/cpi_current.json
+
+          curl --fail --silent --show-error \
+            --retry 3 --retry-delay 5 \
+            "${PREVIOUS_URL}" \
+            -o /tmp/cpi_previous.json
+
+          PUBLISHED_MONTH=$(jq -r '.latest_month // empty' software/tracker_status.json)
+
+          echo "Published tracker month: ${PUBLISHED_MONTH}"
+
+          LATEST_MONTH=$(
+            jq -r '
+              [
+                (.data // . // [])[]
+                | .month?
+                | select(. != null and . != "")
+              ]
+              | max
+            ' /tmp/cpi_current.json
+          )
+
+          echo "Latest MoSPI month: ${LATEST_MONTH}"
+
+          if [ "${FORCE_UPDATE}" = "true" ]; then
+            echo "Force update requested."
+            echo "update=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "${LATEST_MONTH}" ] && [ "${LATEST_MONTH}" != "${PUBLISHED_MONTH}" ]; then
+            echo "New CPI data detected."
+            echo "update=true" >> "$GITHUB_OUTPUT"
           else
-            echo "stale=false" >> "$GITHUB_OUTPUT"
             echo "Tracker is already current."
+            echo "update=false" >> "$GITHUB_OUTPUT"
           fi
-
+    
       - name: Set up R
         if: steps.check.outputs.stale == 'true'
         uses: r-lib/actions/setup-r@v2
