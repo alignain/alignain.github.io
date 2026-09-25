@@ -262,28 +262,75 @@ jobs:
       # ------------------------------------------------------------
       # 5. Install R packages
       # ------------------------------------------------------------
-           - name: Install R packages
+          - name: Install R packages
         if: steps.check.outputs.update == 'true'
+        shell: bash
         run: |
-          Rscript -e 'install.packages(c(
-            "dplyr",
-            "tidyr",
-            "ggplot2",
-            "lubridate",
-            "httr2",
-            "jsonlite",
-            "stringr",
-            "forcats",
-            "scales",
-            "knitr",
-            "ragg",
-            "sf",
-            "ggiraph"
-          ), repos="https://cloud.r-project.org")'
+          set -euo pipefail
 
-          Rscript -e 'install.packages("rmarkdown", repos="https://cloud.r-project.org")'
+          Rscript -e '
+            options(repos = c(CRAN = "https://cloud.r-project.org"))
 
-          Rscript -e 'library(rmarkdown); packageVersion("rmarkdown")'
+            packages <- c(
+              "dplyr",
+              "tidyr",
+              "ggplot2",
+              "lubridate",
+              "httr2",
+              "jsonlite",
+              "stringr",
+              "forcats",
+              "scales",
+              "knitr",
+              "rmarkdown",
+              "ragg",
+              "sf",
+              "ggiraph"
+            )
+
+            missing <- packages[
+              !vapply(
+                packages,
+                requireNamespace,
+                logical(1),
+                quietly = TRUE
+              )
+            ]
+
+            if (length(missing) > 0) {
+              message("Installing missing packages: ",
+                      paste(missing, collapse = ", "))
+              install.packages(
+                missing,
+                dependencies = TRUE
+              )
+            }
+
+            message("Checking required packages...")
+
+            still_missing <- packages[
+              !vapply(
+                packages,
+                requireNamespace,
+                logical(1),
+                quietly = TRUE
+              )
+            ]
+
+            if (length(still_missing) > 0) {
+              stop(
+                "These R packages are still missing: ",
+                paste(still_missing, collapse = ", ")
+              )
+            }
+
+            message(
+              "rmarkdown version: ",
+              as.character(packageVersion("rmarkdown"))
+            )
+
+            message("All required R packages are installed.")
+          '
       # ------------------------------------------------------------
       # 6. Set up Quarto
       # ------------------------------------------------------------
